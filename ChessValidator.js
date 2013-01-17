@@ -47,6 +47,45 @@ STARTING_BOARD = {
     'h8': BLACK + ROOK,
 };
 
+function isLowerCase(str) {
+    return str == str.toLowerCase();
+}
+
+function deepCopy(array) {
+    var jqueryCopy = $.extend(true, {}, array);
+    var newArray = [];
+
+    for (i in jqueryCopy) {
+        newArray.push(jqueryCopy[i]);
+    }
+
+    return newArray;
+}
+
+function arraysEqual(a, b) {
+    if (a.length != b.length) {
+        return false;
+    }
+
+    for (i in a) {
+        if (a[i] != b[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function arrayContains(array, elem) {
+    for (i in array) {
+        if (arraysEqual(array[i], elem)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function ChessValidator() {
     this.initialize();
 }
@@ -85,6 +124,7 @@ ChessValidator.prototype.printBoard = function() {
     }
 }
 
+// Note: square -- "a1" to "h8"; coordinates -- x = 0, y = 0 to x = 7, y = 7
 ChessValidator.prototype.squareToCoordinates = function(square) {
     var x = square.charCodeAt(0) - 'a'.charCodeAt(0);
 
@@ -93,6 +133,10 @@ ChessValidator.prototype.squareToCoordinates = function(square) {
 
     var y = square.charCodeAt(1) - '1'.charCodeAt(0);
     return [x, y];
+}
+
+ChessValidator.prototype.coordinatesToSquare = function(x, y) {
+    return String.fromCharCode(x + 'a'.charCodeAt(0), y + '1'.charCodeAt(0));
 }
 
 ChessValidator.prototype.isEmptyAtSquare = function(square) {
@@ -121,7 +165,7 @@ ChessValidator.prototype.setPieceAt = function(x, y, piece) {
     this.board[x][y] = piece;
 }
 
-ChessValidator.prototype.insideBoard = function(x, y) {
+ChessValidator.prototype.isInsideBoard = function(x, y) {
     return x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE;
 }
 
@@ -134,7 +178,7 @@ ChessValidator.prototype.getPawnAttackingSquares = function(x, y) {
     [-1, +1].forEach(function(dx) {
         var nx = x + dx, ny = y + dy;
 
-        if (self.insideBoard(nx, ny)) {
+        if (self.isInsideBoard(nx, ny)) {
             squares.push([nx, ny]);
         }
     });
@@ -150,7 +194,7 @@ ChessValidator.prototype.getKnightAttackingSquares = function(x, y) {
     for (i in dx) {
         var nx = x + dx[i], ny = y + dy[i];
 
-        if (this.insideBoard(nx, ny)) {
+        if (this.isInsideBoard(nx, ny)) {
             squares.push([nx, ny]);
         }
     }
@@ -166,7 +210,7 @@ ChessValidator.prototype.getBishopAttackingSquares = function(x, y) {
         [-1, +1].forEach(function(dy) {
             var nx = x + dx, ny = y + dy;
 
-            while (self.insideBoard(nx, ny)) {
+            while (self.isInsideBoard(nx, ny)) {
                 squares.push([nx, ny]);
 
                 if (!self.isEmptyAt(nx, ny)) {
@@ -190,7 +234,7 @@ ChessValidator.prototype.getRookAttackingSquares = function(x, y) {
     for (i in dx) {
         var nx = x + dx[i], ny = y + dy[i];
 
-        while (this.insideBoard(nx, ny)) {
+        while (this.isInsideBoard(nx, ny)) {
             squares.push([nx, ny]);
 
             if (!this.isEmptyAt(nx, ny)) {
@@ -217,7 +261,7 @@ ChessValidator.prototype.getKingAttackingSquares = function(x, y) {
             if (dx != 0 || dy != 0) {
                 var nx = x + dx, ny = y + dy;
 
-                if (this.insideBoard(nx, ny)) {
+                if (this.isInsideBoard(nx, ny)) {
                     squares.push([nx, ny]);
                 }
             }
@@ -251,7 +295,7 @@ ChessValidator.prototype.getAttackingSquares = function(x, y) {
     return [];
 }
 
-ChessValidator.prototype.inCheck = function(player) {
+ChessValidator.prototype.isInCheck = function(player) {
     var other = player == WHITE ? BLACK : WHITE;
     var king = [-1, -1];
 
@@ -265,17 +309,13 @@ ChessValidator.prototype.inCheck = function(player) {
 
     for (var x = 0; x < BOARD_SIZE; x++) {
         for (var y = 0; y < BOARD_SIZE; y++) {
-            if (this.getPieceAt(x, y)[0] == other && this.getAttackingSquares(x, y).indexOf(king) != -1) {
+            if (this.getPieceAt(x, y)[0] == other && arrayContains(this.getAttackingSquares(x, y), king)) {
                 return true;
             }
         }
     }
 
     return false;
-}
-
-function isLowerCase(str) {
-    return str == str.toLowerCase();
 }
 
 /*
@@ -287,6 +327,7 @@ function isLowerCase(str) {
  * En passant doesn't have special notation, but watch out for it.
  * Pawn promotions should automatically turn into a queen for now.
  * TODO: enable underpromotions
+ * TODO: check for invalid move notation (sent by client, so can't be trusted)
  */
 ChessValidator.prototype.isLegalMove = function(move) {
     // Can't move on your opponent's turn
@@ -295,15 +336,56 @@ ChessValidator.prototype.isLegalMove = function(move) {
     }
 
     if (move[2] == '0') {
-        // Case 3
+        // Case 3: castling
 
+        // TODO: check if king or rook has already moved (solution: add array hasMoved, update during simulateMove)
+
+        if (move.length == 5) {
+            // Kingside castle
+
+            var column = move[0] == WHITE ? '1' : '8';
+
+            if (this.getPieceAtSquare('e' + column) != move[0] + KING || this.getPieceAtSquare('h' + column) != move[0] + ROOK) {
+                return false;
+            }
+
+            if (!this.isEmptyAtSquare('f' + column) || !this.isEmptyAtSquare('g' + column)) {
+                return false;
+            }
+
+            if (this.isInCheck(move[0])) {
+                return false;
+            }
+
+            var originalBoard = this.simulateMove(move[0] + '_' + 'e' + column + '-' + 'f' + column);
+
+            if (this.isInCheck(move[0])) {
+                this.undoMove(originalBoard);
+                return false;
+            }
+
+            this.simulateMove(move[0] + '_' + 'f' + column + '-' + 'g' + column);
+
+            if (this.isInCheck(move[0])) {
+                this.undoMove(originalBoard);
+                return false;
+            }
+
+            this.undoMove(originalBoard);
+            return true;
+        } else {
+            // Queenside castle
+
+        }
     } else if (isLowerCase(move[2])) {
-        // Case 1
+        // Case 1: regular move
 
         var from = move.substring(2, 4);
         var to = move.substring(5, 7);
         var fromPiece = this.getPieceAtSquare(from);
         var toPiece = this.getPieceAtSquare(to);
+        var fromCoords = this.squareToCoordinates(from);
+        var toCoords = this.squareToCoordinates(to);
 
         // Starting square must have a piece of the right color
         if (fromPiece[0] != move[0]) {
@@ -311,85 +393,105 @@ ChessValidator.prototype.isLegalMove = function(move) {
         }
 
         // Starting piece color cannot be the same as ending piece color
+        // Also prevents moving to the same square
         if (fromPiece[0] == toPiece[0]) {
             return false;
         }
 
         // Must be a valid move for the type of piece
 
-        // Check pawn specifically; everything else can just use getAttackingSquares
-        if (fromPiece[1] == PAWN && this.squareToCoordinates(from)[0] == this.squareToCoordinates(to)[0]) {
-            var coords = this.squareToCoordinates(from);
-            var dy = move[0] == WHITE ? +1 : -1;
-            var x = coords[0], y = coords[1] + dy;
+        // Check pawn moving forward specifically; everything else can just use getAttackingSquares
+        if (fromPiece[1] == PAWN && fromCoords[0] == toCoords[0]) {
+            var x = fromCoords[0], y = fromCoords[1];
+            var dir = move[0] == WHITE ? +1 : -1;
+            var dy = toCoords[1] - y;
 
-            if (!this.insideBoard(x, y) || !this.isEmptyAt(x, y)) {
+            // Can't move backwards
+            if (dy * dir <= 0) {
+                return false;
+            }
+
+            // Can't move more than two steps
+            if (Math.abs(dy) > 2) {
+                return false;
+            } else if (Math.abs(dy) == 2) {
+                // Must be on the first row of pawns
+                if (fromCoords[1] != (move[0] == WHITE ? 1 : 6)) {
+                    return false;
+                }
+
+                // Must have both squares clear
+                if (!this.isEmptyAt(x, y + dir) || !this.isEmptyAt(x, y + 2 * dir)) {
+                    return false;
+                }
+            } else if (Math.abs(dy) == 1) {
+                if (!this.isInsideBoard(x, y + dir) || !this.isEmptyAt(x, y + dir)) {
+                    return false;
+                }
+            } else {
                 return false;
             }
         } else {
-            if (this.getAttackingMoves())
+            if (!arrayContains(this.getAttackingSquares(fromCoords[0], fromCoords[1]), toCoords))
+                return false;
         }
-
-        // Must not end up in check
     } else {
-        // Case 2
+        // Case 2: dropped piece
 
     }
+
+    // Must not end up in check
+    var previousBoard = this.simulateMove(move);
+    var legal = !this.isInCheck(move[0]);
+    this.undoMove(previousBoard);
+    return legal;
 }
 
-ChessValidator.prototype.legalMoves = function() {
+ChessValidator.prototype.legalMoves = function(x, y) {
 
 }
 
 ChessValidator.prototype.simulateMove = function(move) {
+    var previousBoard = deepCopy(this.board);
+
     if (move[2] == '0') {
-        // Case 3
+        // Case 3: castling
 
     } else if (isLowerCase(move[2])) {
-        // Case 1
+        // Case 1: regular move
         var from = move.substring(2, 4);
         var to = move.substring(5, 7);
-        var replaced = this.getPieceAtSquare(to);
         this.setPieceAtSquare(to, this.getPieceAtSquare(from));
         this.setPieceAtSquare(from, EMPTY2);
 
         var coords = this.squareToCoordinates(to);
 
         // Pawn promotion (automatic queen for now)
+        // TODO: enable underpromotion
         if ((move[0] == WHITE && coords[1] == BOARD_SIZE - 1) || (move[0] == BLACK && coords[1] == 0)) {
-            // This might be more difficult to undo
+            this.setPieceAtSquare(to, move[0] + QUEEN);
         }
-
-        // TODO: replace with resetting the entire object
-        return replaced;
     } else {
-        // Case 2
+        // Case 2: dropped piece
 
     }
+
+    return previousBoard;
 }
 
-ChessValidator.prototype.undoMove = function(move, replaced) {
-    // TODO: replace with just resetting the entire board
-
-    if (move[2] == '0') {
-        // Case 3
-
-    } else if (isLowerCase(move[2])) {
-        // Case 1
-        var from = move.substring(2, 4);
-        var to = move.substring(5, 7);
-        this.setPieceAtSquare(from, this.getPieceAtSquare(to));
-        this.setPieceAtSquare(to, replaced);
-    } else {
-        // Case 2
-
-    }
+ChessValidator.prototype.undoMove = function(previousBoard) {
+    this.board = deepCopy(previousBoard);
 }
 
 ChessValidator.prototype.makeMove = function(move) {
     // Call simulateMove?
+    if (this.isLegalMove(move)) {
+        this.simulateMove(move);
+        this.turn = this.turn == WHITE ? BLACK : WHITE;
+        return true;
+    }
 
-    this.turn = this.turn == WHITE ? BLACK : WHITE;
+    return false;
 }
 
 var x = new ChessValidator();
