@@ -328,6 +328,7 @@ ChessValidator.prototype.isInCheck = function(player) {
  * Pawn promotions should automatically turn into a queen for now.
  * TODO: enable underpromotions
  * TODO: check for invalid move notation (sent by client, so can't be trusted)
+ * TODO: pawns can only move diagonally when capturing; also check en passant
  */
 ChessValidator.prototype.isLegalMove = function(move) {
     // Can't move on your opponent's turn
@@ -338,12 +339,12 @@ ChessValidator.prototype.isLegalMove = function(move) {
     if (move[2] == '0') {
         // Case 3: castling
 
-        // TODO: check if king or rook has already moved (solution: add array hasMoved, update during simulateMove)
+        var column = move[0] == WHITE ? '1' : '8';
+
+        // TODO: check if king or rook has already moved (solution: add array hasMoved, update during makeMove)
 
         if (move.length == 5) {
             // Kingside castle
-
-            var column = move[0] == WHITE ? '1' : '8';
 
             if (this.getPieceAtSquare('e' + column) != move[0] + KING || this.getPieceAtSquare('h' + column) != move[0] + ROOK) {
                 return false;
@@ -352,6 +353,8 @@ ChessValidator.prototype.isLegalMove = function(move) {
             if (!this.isEmptyAtSquare('f' + column) || !this.isEmptyAtSquare('g' + column)) {
                 return false;
             }
+
+            // Verify no position is in check
 
             if (this.isInCheck(move[0])) {
                 return false;
@@ -375,7 +378,36 @@ ChessValidator.prototype.isLegalMove = function(move) {
             return true;
         } else {
             // Queenside castle
+            if (this.getPieceAtSquare('e' + column) != move[0] + KING || this.getPieceAtSquare('a' + column) != move[0] + ROOK) {
+                return false;
+            }
 
+            if (!this.isEmptyAtSquare('b' + column) || !this.isEmptyAtSquare('c' + column) || !this.isEmptyAtSquare('d' + column)) {
+                return false;
+            }
+
+            // Verify no position is in check
+
+            if (this.isInCheck(move[0])) {
+                return false;
+            }
+
+            var originalBoard = this.simulateMove(move[0] + '_' + 'e' + column + '-' + 'd' + column);
+
+            if (this.isInCheck(move[0])) {
+                this.undoMove(originalBoard);
+                return false;
+            }
+
+            this.simulateMove(move[0] + '_' + 'd' + column + '-' + 'c' + column);
+
+            if (this.isInCheck(move[0])) {
+                this.undoMove(originalBoard);
+                return false;
+            }
+
+            this.undoMove(originalBoard);
+            return true;
         }
     } else if (isLowerCase(move[2])) {
         // Case 1: regular move
@@ -401,43 +433,61 @@ ChessValidator.prototype.isLegalMove = function(move) {
         // Must be a valid move for the type of piece
 
         // Check pawn moving forward specifically; everything else can just use getAttackingSquares
-        if (fromPiece[1] == PAWN && fromCoords[0] == toCoords[0]) {
-            var x = fromCoords[0], y = fromCoords[1];
-            var dir = move[0] == WHITE ? +1 : -1;
-            var dy = toCoords[1] - y;
+        if (fromPiece[1] == PAWN) {
+            if (fromCoords[0] == toCoords[0]) {
+                var x = fromCoords[0], y = fromCoords[1];
+                var dir = move[0] == WHITE ? +1 : -1;
+                var dy = toCoords[1] - y;
 
-            // Can't move backwards
-            if (dy * dir <= 0) {
-                return false;
-            }
-
-            // Can't move more than two steps
-            if (Math.abs(dy) > 2) {
-                return false;
-            } else if (Math.abs(dy) == 2) {
-                // Must be on the first row of pawns
-                if (fromCoords[1] != (move[0] == WHITE ? 1 : 6)) {
+                // Can't move backwards
+                if (dy * dir <= 0) {
                     return false;
                 }
 
-                // Must have both squares clear
-                if (!this.isEmptyAt(x, y + dir) || !this.isEmptyAt(x, y + 2 * dir)) {
+                // Can't move more than two steps
+                if (Math.abs(dy) > 2) {
                     return false;
-                }
-            } else if (Math.abs(dy) == 1) {
-                if (!this.isInsideBoard(x, y + dir) || !this.isEmptyAt(x, y + dir)) {
+                } else if (Math.abs(dy) == 2) {
+                    // Must be on the first row of pawns
+                    if (fromCoords[1] != (move[0] == WHITE ? 1 : 6)) {
+                        return false;
+                    }
+
+                    // Must have both squares clear
+                    if (!this.isEmptyAt(x, y + dir) || !this.isEmptyAt(x, y + 2 * dir)) {
+                        return false;
+                    }
+                } else if (Math.abs(dy) == 1) {
+                    if (!this.isInsideBoard(x, y + dir) || !this.isEmptyAt(x, y + dir)) {
+                        return false;
+                    }
+                } else {
                     return false;
                 }
             } else {
-                return false;
+                // Can only move diagonally when capturing
+                if (!arrayContains(this.getAttackingSquares(fromCoords[0], fromCoords[1]), toCoords)) {
+                    return false;
+                }
+
+                if (this.isEmptyAt(toCoords[0], toCoords[1])) {
+                    return false;
+                }
             }
         } else {
-            if (!arrayContains(this.getAttackingSquares(fromCoords[0], fromCoords[1]), toCoords))
+            if (!arrayContains(this.getAttackingSquares(fromCoords[0], fromCoords[1]), toCoords)) {
                 return false;
+            }
         }
     } else {
         // Case 2: dropped piece
 
+        // TODO: check for validity here too
+        var square = move.substring(3, 5);
+
+        if (!this.isEmptyAtSquare(square)) {
+            return false;
+        }
     }
 
     // Must not end up in check
@@ -456,7 +506,16 @@ ChessValidator.prototype.simulateMove = function(move) {
 
     if (move[2] == '0') {
         // Case 3: castling
+        var column = move[0] == WHITE ? '1' : '8';
 
+        if (move.length == 5) {
+            // Hack: move the king to g1 / g8 and move the rook to f1 / f8
+            this.simulateMove(move[0] + '_e' + column + '-g' + column);
+            this.simulateMove(move[0] + '_h' + column + '-f' + column);
+        } else {
+            this.simulateMove(move[0] + '_e' + column + '-c' + column);
+            this.simulateMove(move[0] + '_a' + column + '-d' + column);
+        }
     } else if (isLowerCase(move[2])) {
         // Case 1: regular move
         var from = move.substring(2, 4);
@@ -473,7 +532,9 @@ ChessValidator.prototype.simulateMove = function(move) {
         }
     } else {
         // Case 2: dropped piece
-
+        var piece = move[0] + move[2];
+        var square = move.substring(3, 5);
+        this.setPieceAtSquare(square, piece);
     }
 
     return previousBoard;
@@ -485,6 +546,7 @@ ChessValidator.prototype.undoMove = function(previousBoard) {
 
 ChessValidator.prototype.makeMove = function(move) {
     // Call simulateMove?
+    // TODO: update hasMoved
     if (this.isLegalMove(move)) {
         this.simulateMove(move);
         this.turn = this.turn == WHITE ? BLACK : WHITE;
