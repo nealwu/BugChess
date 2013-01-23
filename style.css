@@ -1,0 +1,12 @@
+#boards {
+    text-align: center;
+}
+
+.board_div {
+    display: inline-block;
+}
+
+.right_board {
+    margin-top: 100px;
+    margin-left: 20px;
+}
