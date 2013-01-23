@@ -57,6 +57,7 @@ function ChessBoard(number) {
     this.bottomPlayer = this.number == 0 ? WHITE : BLACK;
     this.raphael = Raphael('board' + this.number, BOARD_SIZE, BOARD_SIZE);
     this.initBoard();
+    this.validator = new ChessValidator();
 }
 
 ChessBoard.prototype.initBoard = function() {
@@ -72,11 +73,15 @@ ChessBoard.prototype.initBoard = function() {
                 .attr('fill', squareColor)
                 .attr('stroke-width', 0);
         }
-    }
+    }   
 
+    this.pieceAtSquare = {};
+
+    // TODO: store pieces somewhere
     for (square in STARTING_BOARD) {
-        var piece = STARTING_BOARD[square];
-        this.placePiece(piece, square);
+        var name = STARTING_BOARD[square];
+        var piece = this.placePiece(name, square);
+        this.pieceAtSquare[square] = piece;
     }
 }
 
@@ -90,7 +95,7 @@ ChessBoard.prototype.squareToCoordinates = function(square) {
 
     var y = '8'.charCodeAt(0) - square.charCodeAt(1);
 
-    // If the bottom player is black, flip the y-coordinate
+    // If the bottom player is black, flip the coordinates
     if (this.bottomPlayer == WHITE) {
         return [x, y];
     } else {
@@ -99,7 +104,7 @@ ChessBoard.prototype.squareToCoordinates = function(square) {
 }
 
 ChessBoard.prototype.coordinatesToSquare = function(x, y) {
-    // If the bottom player is black, flip the y-coordinate
+    // If the bottom player is black, flip the coordinates
     if (this.bottomPlayer == WHITE) {
         return String.fromCharCode(x + 'a'.charCodeAt(0), '8'.charCodeAt(0) - y);
     } else {
@@ -107,12 +112,17 @@ ChessBoard.prototype.coordinatesToSquare = function(x, y) {
     }
 }
 
-ChessBoard.prototype.placePiece = function(piece, square) {
+ChessBoard.prototype.placePiece = function(name, square) {
     var coords = this.squareToCoordinates(square);
-    this.raphael.image('images/pieces/' + piece + '.svg', coords[0] * SQUARE_SIZE + PIECE_OFFSET, coords[1] * SQUARE_SIZE + PIECE_OFFSET, PIECE_SIZE, PIECE_SIZE);
+    var piece = this.raphael.image('images/pieces/' + name + '.svg',
+        coords[0] * SQUARE_SIZE + PIECE_OFFSET, coords[1] * SQUARE_SIZE + PIECE_OFFSET, PIECE_SIZE, PIECE_SIZE);
+    piece.name = name;
+    return piece;
 }
+
+var boards;
 
 $(document).ready(function() {
     // Create two boards
-    var boards = [new ChessBoard(0), new ChessBoard(1)];
+    boards = [new ChessBoard(0), new ChessBoard(1)];
 });
