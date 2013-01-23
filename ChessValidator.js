@@ -109,7 +109,8 @@ ChessValidator.prototype.initialize = function() {
 }
 
 ChessValidator.prototype.printBoard = function() {
-    for (var y = BOARD_SIZE - 1; y >= 0; y--) {
+//    for (var y = BOARD_SIZE - 1; y >= 0; y--) {
+    for (var y = 0; y < BOARD_SIZE; y++) {
         var line = "";
 
         for (var x = 0; x < BOARD_SIZE; x++) {
@@ -125,18 +126,19 @@ ChessValidator.prototype.printBoard = function() {
 }
 
 // Note: square -- "a1" to "h8"; coordinates -- x = 0, y = 0 to x = 7, y = 7
+// (0, 0) = "a8"; (7, 7) = "h1"
 ChessValidator.prototype.squareToCoordinates = function(square) {
     var x = square.charCodeAt(0) - 'a'.charCodeAt(0);
 
     if (x < 0)
         x = square.charCodeAt(0) - 'A'.charCodeAt(0);
 
-    var y = square.charCodeAt(1) - '1'.charCodeAt(0);
+    var y = '8'.charCodeAt(0) - square.charCodeAt(1);
     return [x, y];
 }
 
 ChessValidator.prototype.coordinatesToSquare = function(x, y) {
-    return String.fromCharCode(x + 'a'.charCodeAt(0), y + '1'.charCodeAt(0));
+    return String.fromCharCode(x + 'a'.charCodeAt(0), '8'.charCodeAt(0) - y);
 }
 
 ChessValidator.prototype.isEmptyAtSquare = function(square) {
@@ -173,7 +175,7 @@ ChessValidator.prototype.getPawnAttackingSquares = function(x, y) {
     var self = this;
     var squares = [];
     var color = this.getPieceAt(x, y)[0];
-    var dy = color == WHITE ? +1 : -1;
+    var dy = color == WHITE ? -1 : +1;
 
     [-1, +1].forEach(function(dx) {
         var nx = x + dx, ny = y + dy;
@@ -436,7 +438,7 @@ ChessValidator.prototype.isLegalMove = function(move) {
         if (fromPiece[1] == PAWN) {
             if (fromCoords[0] == toCoords[0]) {
                 var x = fromCoords[0], y = fromCoords[1];
-                var dir = move[0] == WHITE ? +1 : -1;
+                var dir = move[0] == WHITE ? -1 : +1;
                 var dy = toCoords[1] - y;
 
                 // Can't move backwards
@@ -449,7 +451,7 @@ ChessValidator.prototype.isLegalMove = function(move) {
                     return false;
                 } else if (Math.abs(dy) == 2) {
                     // Must be on the first row of pawns
-                    if (fromCoords[1] != (move[0] == WHITE ? 1 : 6)) {
+                    if (fromCoords[1] != (move[0] == WHITE ? 6 : 1)) {
                         return false;
                     }
 
@@ -527,7 +529,7 @@ ChessValidator.prototype.simulateMove = function(move) {
 
         // Pawn promotion (automatic queen for now)
         // TODO: enable underpromotion
-        if ((move[0] == WHITE && coords[1] == BOARD_SIZE - 1) || (move[0] == BLACK && coords[1] == 0)) {
+        if ((move[0] == WHITE && coords[1] == 0) || (move[0] == BLACK && coords[1] == BOARD_SIZE - 1)) {
             this.setPieceAtSquare(to, move[0] + QUEEN);
         }
     } else {
