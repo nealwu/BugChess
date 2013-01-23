@@ -105,13 +105,13 @@ ChessValidator.prototype.initialize = function() {
         this.setPieceAtSquare(square, STARTING_BOARD[square]);
     }
 
-    this.turn = 'W';
+    this.turn = WHITE;
 }
 
 ChessValidator.prototype.printBoard = function() {
 //    for (var y = BOARD_SIZE - 1; y >= 0; y--) {
     for (var y = 0; y < BOARD_SIZE; y++) {
-        var line = "";
+        var line = '';
 
         for (var x = 0; x < BOARD_SIZE; x++) {
             line += this.getPieceAt(x, y);
@@ -125,8 +125,8 @@ ChessValidator.prototype.printBoard = function() {
     }
 }
 
-// Note: square -- "a1" to "h8"; coordinates -- x = 0, y = 0 to x = 7, y = 7
-// (0, 0) = "a8"; (7, 7) = "h1"
+// Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
+// (0, 0) = 'a8'; (7, 7) = 'h1'
 ChessValidator.prototype.squareToCoordinates = function(square) {
     var x = square.charCodeAt(0) - 'a'.charCodeAt(0);
 
@@ -293,7 +293,7 @@ ChessValidator.prototype.getAttackingSquares = function(x, y) {
         return this.getKingAttackingSquares(x, y);
     }
 
-    console.log("Forgot a piece? " + piece);
+    console.log('Forgot a piece? ' + piece);
     return [];
 }
 
