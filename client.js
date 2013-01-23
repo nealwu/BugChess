@@ -73,6 +73,11 @@ ChessBoard.prototype.initBoard = function() {
                 .attr('stroke-width', 0);
         }
     }
+
+    for (square in STARTING_BOARD) {
+        var piece = STARTING_BOARD[square];
+        this.placePiece(piece, square);
+    }
 }
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
@@ -86,17 +91,25 @@ ChessBoard.prototype.squareToCoordinates = function(square) {
     var y = '8'.charCodeAt(0) - square.charCodeAt(1);
 
     // If the bottom player is black, flip the y-coordinate
-    return [x, this.bottomPlayer == WHITE ? y : 7 - y];
+    if (this.bottomPlayer == WHITE) {
+        return [x, y];
+    } else {
+        return [7 - x, 7 - y];
+    }
 }
 
 ChessBoard.prototype.coordinatesToSquare = function(x, y) {
     // If the bottom player is black, flip the y-coordinate
-    return String.fromCharCode(x + 'a'.charCodeAt(0), this.bottomPlayer == WHITE ? '8'.charCodeAt(0) - y : y - '1'.charCodeAt(0));
+    if (this.bottomPlayer == WHITE) {
+        return String.fromCharCode(x + 'a'.charCodeAt(0), '8'.charCodeAt(0) - y);
+    } else {
+        return String.fromCharCode('h'.charCodeAt(0) - x, y + '1'.charCodeAt(0));
+    }
 }
 
 ChessBoard.prototype.placePiece = function(piece, square) {
     var coords = this.squareToCoordinates(square);
-
+    this.raphael.image('images/pieces/' + piece + '.svg', coords[0] * SQUARE_SIZE + PIECE_OFFSET, coords[1] * SQUARE_SIZE + PIECE_OFFSET, PIECE_SIZE, PIECE_SIZE);
 }
 
 $(document).ready(function() {
