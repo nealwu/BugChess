@@ -1,8 +1,7 @@
-SQUARE_SIZE = 60;
-BOARD_SIZE = 8 * SQUARE_SIZE;
-PIECE_OFFSET = 5;
-PIECE_SIZE = SQUARE_SIZE - 2 * PIECE_OFFSET;
-
+SQUARE_PIXELS = 60;
+BOARD_PIXELS = 8 * SQUARE_PIXELS;
+PIECE_OFFSET = 3;
+PIECE_PIXELS = SQUARE_PIXELS - 2 * PIECE_OFFSET;
 
 WHITE = 'W';
 BLACK = 'B';
@@ -51,11 +50,12 @@ STARTING_BOARD = {
     'h8': BLACK + ROOK,
 };
 
-// CLass for chess boards. number is the index of the board (0 or 1).
+// Class for chess boards. number is the index of the board (0 or 1).
 function ChessBoard(number) {
     this.number = number;
     this.bottomPlayer = this.number == 0 ? WHITE : BLACK;
-    this.raphael = Raphael('board' + this.number, BOARD_SIZE, BOARD_SIZE);
+    this.raphael = Raphael('board' + this.number, BOARD_PIXELS, BOARD_PIXELS);
+    this.raphael.chessBoard = this;
     this.initBoard();
     this.validator = new ChessValidator();
 }
@@ -69,7 +69,7 @@ ChessBoard.prototype.initBoard = function() {
         for (var y = 0; y < 8; y++) {
             // Choose between light brown and dark brown
             var squareColor = (x + y) % 2 == 0 ? '#f0d9b5' : '#b58863';
-            this.boardSquares[x][y] = this.raphael.rect(x * SQUARE_SIZE, y * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+            this.boardSquares[x][y] = this.raphael.rect(x * SQUARE_PIXELS, y * SQUARE_PIXELS, SQUARE_PIXELS, SQUARE_PIXELS)
                 .attr('fill', squareColor)
                 .attr('stroke-width', 0);
         }
@@ -115,9 +115,52 @@ ChessBoard.prototype.coordinatesToSquare = function(x, y) {
 ChessBoard.prototype.placePiece = function(name, square) {
     var coords = this.squareToCoordinates(square);
     var piece = this.raphael.image('images/pieces/' + name + '.svg',
-        coords[0] * SQUARE_SIZE + PIECE_OFFSET, coords[1] * SQUARE_SIZE + PIECE_OFFSET, PIECE_SIZE, PIECE_SIZE);
-    piece.name = name;
+        coords[0] * SQUARE_PIXELS + PIECE_OFFSET, coords[1] * SQUARE_PIXELS + PIECE_OFFSET, PIECE_PIXELS, PIECE_PIXELS);
+    piece.data('name', name);
+    piece.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
     return piece;
+}
+
+ChessBoard.pieceStart = function(x, y, event) {
+    this.data('originalX', this.attr('x'));
+    this.data('originalY', this.attr('y'));
+}
+
+ChessBoard.pieceMove = function(dx, dy, x, y, event) {
+    this.attr('x', this.data('originalX') + dx);
+    this.attr('y', this.data('originalY') + dy);
+}
+
+ChessBoard.pieceEnd = function(event) {
+    // Get the coordinates of the piece's center
+    var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
+    var x = Math.floor(centerX / SQUARE_PIXELS), y = Math.floor(centerY / SQUARE_PIXELS);
+    var toSquare = this.paper.chessBoard.coordinatesToSquare(x, y);
+    var fromSquare = this.paper.chessBoard.coordinatesToSquare(Math.floor(this.data('originalX') / SQUARE_PIXELS), Math.floor(this.data('originalY') / SQUARE_PIXELS));
+    var player = this.data('name')[0];
+    var move = player + '_' + fromSquare + '-' + toSquare;
+    console.log(move);
+    // Check for validity
+    if (x >= 0 && x < 8 && y >= 0 && y < 8 && this.paper.chessBoard.validator.isLegalMove(move)) {
+        console.log('Legal move!');
+        this.paper.chessBoard.validator.makeMove(move);
+
+        if (this.paper.chessBoard.pieceAtSquare[toSquare]) {
+            this.paper.chessBoard.pieceAtSquare[toSquare].remove();
+        }
+
+        this.attr('x', x * SQUARE_PIXELS + PIECE_OFFSET);
+        this.attr('y', y * SQUARE_PIXELS + PIECE_OFFSET);
+
+        this.paper.chessBoard.pieceAtSquare[toSquare] = this;
+        this.paper.chessBoard.pieceAtSquare[fromSquare] = null;
+    } else {
+        // Put back in place
+        console.log('Illegal move');
+        this.attr('x', this.data('originalX'));
+        this.attr('y', this.data('originalY'));
+    }
+    //this.animate({r: 50, opacity: 1}, 500, ">");
 }
 
 var boards;

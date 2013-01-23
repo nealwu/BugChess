@@ -92,14 +92,14 @@ function ChessValidator() {
 
 ChessValidator.prototype.initialize = function() {
     // Initialize to empty
-    this.board = [[EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2],
-                  [EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2],
-                  [EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2],
-                  [EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2],
-                  [EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2],
-                  [EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2],
-                  [EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2],
-                  [EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2, EMPTY2]];
+    this.board = [];
+
+    for (var x = 0; x < 8; x++) {
+        this.board[x] = [];
+        for (var y = 0; y < 8; y++) {
+            this.board[x][y] = EMPTY2;
+        }
+    }
 
     for (square in STARTING_BOARD) {
         this.setPieceAtSquare(square, STARTING_BOARD[square]);
@@ -331,6 +331,7 @@ ChessValidator.prototype.isInCheck = function(player) {
  * TODO: enable underpromotions
  * TODO: check for invalid move notation (sent by client, so can't be trusted)
  * TODO: pawns can only move diagonally when capturing; also check en passant
+ * TODO: turn a long king move into a castle
  */
 ChessValidator.prototype.isLegalMove = function(move) {
     // Can't move on your opponent's turn
