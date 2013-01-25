@@ -140,6 +140,7 @@ ChessBoard.pieceEnd = function(event) {
     var player = this.data('name')[0];
     var move = player + '_' + fromSquare + '-' + toSquare;
     console.log(move);
+
     // Check for validity
     if (x >= 0 && x < 8 && y >= 0 && y < 8 && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
@@ -160,12 +161,20 @@ ChessBoard.pieceEnd = function(event) {
         this.attr('x', this.data('originalX'));
         this.attr('y', this.data('originalY'));
     }
-    //this.animate({r: 50, opacity: 1}, 500, ">");
 }
 
 var boards;
 
 $(document).ready(function() {
+    /*
+    // Set up socket.io
+    var socket = io.connect('http://localhost');
+    socket.on('news', function (data) {
+        console.log(data);
+        socket.emit('my other event', { my: 'data' });
+    });
+*/
+
     // Create two boards
     boards = [new ChessBoard(0), new ChessBoard(1)];
 });

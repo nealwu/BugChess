@@ -320,6 +320,24 @@ ChessValidator.prototype.isInCheck = function(player) {
     return false;
 }
 
+ChessValidator.prototype.checkCastle = function(move) {
+    if (move.length >= 7) {
+        var column = move[0] == WHITE ? '1' : '8';
+        var from = move.substring(2, 4);
+        var to = move.substring(5, 7);
+
+        if (from == 'e' + column && to[1] == column) {
+            if (move.charCodeAt(5) < 'd'.charCodeAt(0)) {
+                move = move.substring(0, 2) + '0-0-0';
+            } else if (move.charCodeAt(5) > 'f'.charCodeAt(0)) {
+                move = move.substring(0, 2) + '0-0';
+            }
+        }
+    }
+
+    return move;
+}
+
 /*
  * Move notation:
  * 1. W_f2-g4         [normal move; could be a capture]
@@ -334,6 +352,8 @@ ChessValidator.prototype.isInCheck = function(player) {
  * TODO: turn a long king move into a castle
  */
 ChessValidator.prototype.isLegalMove = function(move) {
+    move = this.checkCastle(move);
+
     // Can't move on your opponent's turn
     if (move[0] != this.turn) {
         return false;
@@ -504,7 +524,11 @@ ChessValidator.prototype.legalMoves = function(x, y) {
 
 }
 
-ChessValidator.prototype.simulateMove = function(move) {
+ChessValidator.prototype.simulateMove = function(move, skipCheckCastle) {
+    if (!skipCheckCastle) {
+        move = this.checkCastle(move);
+    }
+
     var previousBoard = deepCopy(this.board);
 
     if (move[2] == '0') {
@@ -513,11 +537,11 @@ ChessValidator.prototype.simulateMove = function(move) {
 
         if (move.length == 5) {
             // Hack: move the king to g1 / g8 and move the rook to f1 / f8
-            this.simulateMove(move[0] + '_e' + column + '-g' + column);
-            this.simulateMove(move[0] + '_h' + column + '-f' + column);
+            this.simulateMove(move[0] + '_e' + column + '-g' + column, true);
+            this.simulateMove(move[0] + '_h' + column + '-f' + column, true);
         } else {
-            this.simulateMove(move[0] + '_e' + column + '-c' + column);
-            this.simulateMove(move[0] + '_a' + column + '-d' + column);
+            this.simulateMove(move[0] + '_e' + column + '-c' + column, true);
+            this.simulateMove(move[0] + '_a' + column + '-d' + column, true);
         }
     } else if (isLowerCase(move[2])) {
         // Case 1: regular move
@@ -530,8 +554,10 @@ ChessValidator.prototype.simulateMove = function(move) {
 
         // Pawn promotion (automatic queen for now)
         // TODO: enable underpromotion
-        if ((move[0] == WHITE && coords[1] == 0) || (move[0] == BLACK && coords[1] == BOARD_SIZE - 1)) {
-            this.setPieceAtSquare(to, move[0] + QUEEN);
+        if (this.getPieceAtSquare(from)[1] == PAWN) {
+            if ((move[0] == WHITE && coords[1] == 0) || (move[0] == BLACK && coords[1] == BOARD_SIZE - 1)) {
+                this.setPieceAtSquare(to, move[0] + QUEEN);
+            }
         }
     } else {
         // Case 2: dropped piece
@@ -548,6 +574,8 @@ ChessValidator.prototype.undoMove = function(previousBoard) {
 }
 
 ChessValidator.prototype.makeMove = function(move) {
+    move = this.checkCastle(move);
+
     // Call simulateMove?
     // TODO: update hasMoved
     if (this.isLegalMove(move)) {
