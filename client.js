@@ -38,7 +38,7 @@ ChessBoard.prototype.initBoard = function() {
                 .attr('fill', squareColor)
                 .attr('stroke-width', 0);
         }
-    }   
+    }
 
     this.validator = new ChessValidator();
     this.pieceAtSquare = {};
