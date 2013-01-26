@@ -155,7 +155,11 @@ ChessValidator.prototype.getPieceAtSquare = function(square) {
 }
 
 ChessValidator.prototype.getPieceAt = function(x, y) {
-    return this.board[x][y];
+    if (this.isInsideBoard(x, y)) {
+        return this.board[x][y];
+    } else {
+        return null;
+    }
 }
 
 ChessValidator.prototype.setPieceAtSquare = function(square, piece) {
@@ -164,7 +168,9 @@ ChessValidator.prototype.setPieceAtSquare = function(square, piece) {
 }
 
 ChessValidator.prototype.setPieceAt = function(x, y, piece) {
-    this.board[x][y] = piece;
+    if (this.isInsideBoard(x, y)) {
+        this.board[x][y] = piece;
+    }
 }
 
 ChessValidator.prototype.isInsideBoard = function(x, y) {
@@ -349,7 +355,6 @@ ChessValidator.prototype.checkCastle = function(move) {
  * TODO: enable underpromotions
  * TODO: check for invalid move notation (sent by client, so can't be trusted)
  * TODO: pawns can only move diagonally when capturing; also check en passant
- * TODO: turn a long king move into a castle
  */
 ChessValidator.prototype.isLegalMove = function(move) {
     move = this.checkCastle(move);
@@ -554,7 +559,7 @@ ChessValidator.prototype.simulateMove = function(move, skipCheckCastle) {
 
         // Pawn promotion (automatic queen for now)
         // TODO: enable underpromotion
-        if (this.getPieceAtSquare(from)[1] == PAWN) {
+        if (this.getPieceAtSquare(to)[1] == PAWN) {
             if ((move[0] == WHITE && coords[1] == 0) || (move[0] == BLACK && coords[1] == BOARD_SIZE - 1)) {
                 this.setPieceAtSquare(to, move[0] + QUEEN);
             }

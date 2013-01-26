@@ -60,6 +60,29 @@ function ChessBoard(number) {
     this.validator = new ChessValidator();
 }
 
+ChessBoard.prototype.getBoardFromValidator = function() {
+    // TODO: Get rid of all the pieces on the board
+
+    for (square in this.pieceAtSquare) {
+        var piece = this.pieceAtSquare[square];
+        if (piece) {
+            piece.remove();
+        }
+        this.pieceAtSquare[square] = null;
+    }
+
+    // TODO: Grab all the pieces in the validator and then put them on the board
+
+    for (var x = 0; x < 8; x++) {
+        for (var y = 0; y < 8; y++) {
+            var name = this.validator.getPieceAt(x, y);
+            if (name != EMPTY2) {
+                this.placePiece(name, this.coordinatesToSquare(x, y));
+            }
+        }
+    }
+}
+
 ChessBoard.prototype.initBoard = function() {
     // Set up the 64 squares
     this.boardSquares = [];
@@ -81,7 +104,6 @@ ChessBoard.prototype.initBoard = function() {
     for (square in STARTING_BOARD) {
         var name = STARTING_BOARD[square];
         var piece = this.placePiece(name, square);
-        this.pieceAtSquare[square] = piece;
     }
 }
 
@@ -118,6 +140,7 @@ ChessBoard.prototype.placePiece = function(name, square) {
         coords[0] * SQUARE_PIXELS + PIECE_OFFSET, coords[1] * SQUARE_PIXELS + PIECE_OFFSET, PIECE_PIXELS, PIECE_PIXELS);
     piece.data('name', name);
     piece.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
+    this.pieceAtSquare[square] = piece;
     return piece;
 }
 
@@ -161,6 +184,8 @@ ChessBoard.pieceEnd = function(event) {
         this.attr('x', this.data('originalX'));
         this.attr('y', this.data('originalY'));
     }
+
+    this.paper.chessBoard.getBoardFromValidator();
 }
 
 var boards;
