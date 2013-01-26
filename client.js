@@ -15,75 +15,17 @@ KING = 'K';
 EMPTY = '.';
 EMPTY2 = EMPTY + EMPTY;
 
-STARTING_BOARD = {
-    'a1': WHITE + ROOK,
-    'b1': WHITE + KNIGHT,
-    'c1': WHITE + BISHOP,
-    'd1': WHITE + QUEEN,
-    'e1': WHITE + KING,
-    'f1': WHITE + BISHOP,
-    'g1': WHITE + KNIGHT,
-    'h1': WHITE + ROOK,
-    'a2': WHITE + PAWN,
-    'b2': WHITE + PAWN,
-    'c2': WHITE + PAWN,
-    'd2': WHITE + PAWN,
-    'e2': WHITE + PAWN,
-    'f2': WHITE + PAWN,
-    'g2': WHITE + PAWN,
-    'h2': WHITE + PAWN,
-    'a7': BLACK + PAWN,
-    'b7': BLACK + PAWN,
-    'c7': BLACK + PAWN,
-    'd7': BLACK + PAWN,
-    'e7': BLACK + PAWN,
-    'f7': BLACK + PAWN,
-    'g7': BLACK + PAWN,
-    'h7': BLACK + PAWN,
-    'a8': BLACK + ROOK,
-    'b8': BLACK + KNIGHT,
-    'c8': BLACK + BISHOP,
-    'd8': BLACK + QUEEN,
-    'e8': BLACK + KING,
-    'f8': BLACK + BISHOP,
-    'g8': BLACK + KNIGHT,
-    'h8': BLACK + ROOK,
-};
-
 // Class for chess boards. number is the index of the board (0 or 1).
 function ChessBoard(number) {
     this.number = number;
     this.bottomPlayer = this.number == 0 ? WHITE : BLACK;
-    this.raphael = Raphael('board' + this.number, BOARD_PIXELS, BOARD_PIXELS);
-    this.raphael.chessBoard = this;
     this.initBoard();
-    this.validator = new ChessValidator();
-}
-
-ChessBoard.prototype.getBoardFromValidator = function() {
-    // TODO: Get rid of all the pieces on the board
-
-    for (square in this.pieceAtSquare) {
-        var piece = this.pieceAtSquare[square];
-        if (piece) {
-            piece.remove();
-        }
-        this.pieceAtSquare[square] = null;
-    }
-
-    // TODO: Grab all the pieces in the validator and then put them on the board
-
-    for (var x = 0; x < 8; x++) {
-        for (var y = 0; y < 8; y++) {
-            var name = this.validator.getPieceAt(x, y);
-            if (name != EMPTY2) {
-                this.placePiece(name, this.coordinatesToSquare(x, y));
-            }
-        }
-    }
 }
 
 ChessBoard.prototype.initBoard = function() {
+    this.raphael = Raphael('board' + this.number, BOARD_PIXELS, BOARD_PIXELS);
+    this.raphael.chessBoard = this;
+
     // Set up the 64 squares
     this.boardSquares = [];
 
@@ -98,12 +40,46 @@ ChessBoard.prototype.initBoard = function() {
         }
     }   
 
+    this.validator = new ChessValidator();
     this.pieceAtSquare = {};
 
     // TODO: store pieces somewhere
     for (square in STARTING_BOARD) {
         var name = STARTING_BOARD[square];
         var piece = this.placePiece(name, square);
+    }
+}
+
+ChessBoard.allSquares = function() {
+    var squares = [];
+
+    for (var x = 0; x < 8; x++) {
+        for (var y = 0; y < 8; y++) {
+            squares.push(String.fromCharCode(x + 'a'.charCodeAt(0), y + '1'.charCodeAt(0)));
+        }
+    }
+
+    return squares;
+}
+
+ChessBoard.prototype.getBoardFromValidator = function() {
+    // TODO: Get rid of all the pieces on the board
+
+    for (square in this.pieceAtSquare) {
+        var piece = this.pieceAtSquare[square];
+        if (piece) {
+            piece.remove();
+        }
+        this.pieceAtSquare[square] = null;
+    }
+
+    // TODO: Grab all the pieces in the validator and then put them on the board
+    var squares = ChessBoard.allSquares();
+    for (i in squares) {
+        var name = this.validator.getPieceAtSquare(squares[i]);
+        if (name != EMPTY2) {
+            this.placePiece(name, squares[i]);
+        }
     }
 }
 
