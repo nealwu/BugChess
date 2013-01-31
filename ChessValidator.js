@@ -388,8 +388,6 @@ ChessValidator.prototype.isLegalMove = function(move) {
 
         var column = move[0] == WHITE ? '1' : '8';
 
-        // TODO: check if king or rook has already moved (solution: add array hasMoved, update during makeMove)
-
         if (move.length == 5) {
             // Kingside castle
 
@@ -555,7 +553,7 @@ ChessValidator.prototype.isLegalMove = function(move) {
 }
 
 ChessValidator.prototype.legalMoves = function(x, y) {
-
+    
 }
 
 ChessValidator.prototype.simulateMove = function(move, skipCheckCastle) {
@@ -635,12 +633,12 @@ ChessValidator.prototype.undoMove = function(previousBoard) {
 ChessValidator.prototype.makeMove = function(move) {
     move = this.checkCastle(move);
 
-    // Call simulateMove?
-    // TODO: update hasMoved
+    // Call simulateMove
     if (this.isLegalMove(move)) {
         this.simulateMove(move);
         this.turn = this.turn == WHITE ? BLACK : WHITE;
 
+        // Update hasMoved
         var squares = this.fromAndToSquares(move);
         var from = squares[0], to = squares[1];
         this.hasMoved[from] = this.hasMoved[to] = true;

@@ -43,7 +43,6 @@ ChessBoard.prototype.initBoard = function() {
     this.validator = new ChessValidator();
     this.pieceAtSquare = {};
 
-    // TODO: store pieces somewhere
     for (square in STARTING_BOARD) {
         var name = STARTING_BOARD[square];
         var piece = this.placePiece(name, square);
@@ -63,7 +62,7 @@ ChessBoard.allSquares = function() {
 }
 
 ChessBoard.prototype.getBoardFromValidator = function() {
-    // TODO: Get rid of all the pieces on the board
+    // Get rid of all the pieces on the board
 
     for (square in this.pieceAtSquare) {
         var piece = this.pieceAtSquare[square];
@@ -73,7 +72,7 @@ ChessBoard.prototype.getBoardFromValidator = function() {
         this.pieceAtSquare[square] = null;
     }
 
-    // TODO: Grab all the pieces in the validator and then put them on the board
+    // Grab all the pieces in the validator and then put them on the board
     var squares = ChessBoard.allSquares();
     for (i in squares) {
         var name = this.validator.getPieceAtSquare(squares[i]);
@@ -167,14 +166,12 @@ ChessBoard.pieceEnd = function(event) {
 var boards;
 
 $(document).ready(function() {
-    /*
     // Set up socket.io
     var socket = io.connect('http://localhost');
     socket.on('news', function (data) {
         console.log(data);
         socket.emit('my other event', { my: 'data' });
     });
-*/
 
     // Create two boards
     boards = [new ChessBoard(0), new ChessBoard(1)];
