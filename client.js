@@ -145,14 +145,12 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     if (move.length == 7 && this.validator.isValidSquare(move.substring(2, 4)) && this.validator.isValidSquare(move.substring(5, 7))) {
         var fromSquare = move.substring(2, 4);
         var toSquare = move.substring(5, 7);
-        var toCoords = this.validator.squareToCoordinates(toSquare);
+        var toCoords = this.squareToCoordinates(toSquare);
 
         if (this.pieceAtSquare[toSquare]) {
             this.pieceAtSquare[toSquare].remove();
         }
 
-        console.log(this.pieceAtSquare);
-        console.log(fromSquare);
         this.pieceAtSquare[fromSquare].attr('x', toCoords[0] * SQUARE_PIXELS + PIECE_OFFSET);
         this.pieceAtSquare[fromSquare].attr('y', toCoords[1] * SQUARE_PIXELS + PIECE_OFFSET);
 
