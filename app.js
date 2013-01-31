@@ -7,7 +7,6 @@ var app = require('http').createServer(handler),
 app.listen(80);
 
 function handler(req, res) {
-    console.log(req + ' ' + res);
     fs.readFile(__dirname + '/index.html',
     function(err, data) {
         if (err) {
