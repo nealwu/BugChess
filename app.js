@@ -1,12 +1,14 @@
+ROOM = 'room';
+
 var app = require('http').createServer(handler),
     io = require('socket.io').listen(app),
     fs = require('fs');
 
 app.listen(80);
 
-function handler (req, res) {
+function handler(req, res) {
     fs.readFile(__dirname + '/index.html',
-    function (err, data) {
+    function(err, data) {
         if (err) {
             res.writeHead(500);
             return res.end('Error loading index.html');
@@ -17,9 +19,12 @@ function handler (req, res) {
     });
 }
 
-io.sockets.on('connection', function (socket) {
-    socket.emit('news', { hello: 'world' });
-    socket.on('my other event', function (data) {
-        console.log(data);
+io.sockets.on('connection', function(socket) {
+    socket.join(ROOM);
+    io.sockets.in(ROOM).emit('news', { hello: 'world' });
+    console.log(io.sockets.clients(ROOM));
+
+    socket.on('make_move', function(data) {
+        io.sockets.in(ROOM).emit('make_move', data);
     });
 });

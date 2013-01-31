@@ -129,6 +129,41 @@ ChessBoard.pieceMove = function(dx, dy, x, y, event) {
     this.attr('y', this.data('originalY') + dy);
 }
 
+ChessBoard.prototype.makeMove = function(move, emit) {
+    if (!this.validator.isLegalMove(move)) {
+        return false;
+    }
+
+    this.validator.makeMove(move);
+
+    // Send the move to the server
+    if (emit) {
+        socket.emit('make_move', { move: this.number + '_' + move});
+    }
+
+    // Move pieces on the front end
+    if (move.length == 7 && this.validator.isValidSquare(move.substring(2, 4)) && this.validator.isValidSquare(move.substring(5, 7))) {
+        var fromSquare = move.substring(2, 4);
+        var toSquare = move.substring(5, 7);
+        var toCoords = this.validator.squareToCoordinates(toSquare);
+
+        if (this.pieceAtSquare[toSquare]) {
+            this.pieceAtSquare[toSquare].remove();
+        }
+
+        console.log(this.pieceAtSquare);
+        console.log(fromSquare);
+        this.pieceAtSquare[fromSquare].attr('x', toCoords[0] * SQUARE_PIXELS + PIECE_OFFSET);
+        this.pieceAtSquare[fromSquare].attr('y', toCoords[1] * SQUARE_PIXELS + PIECE_OFFSET);
+
+        this.pieceAtSquare[toSquare] = this.pieceAtSquare[fromSquare];
+        this.pieceAtSquare[fromSquare] = null;
+        return true;
+    }
+
+    return false;
+}
+
 ChessBoard.pieceEnd = function(event) {
     // Get the coordinates of the piece's center
     var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
@@ -142,17 +177,7 @@ ChessBoard.pieceEnd = function(event) {
     // Check for validity
     if (this.paper.chessBoard.validator.isInsideBoard(x, y) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
-        this.paper.chessBoard.validator.makeMove(move);
-
-        if (this.paper.chessBoard.pieceAtSquare[toSquare]) {
-            this.paper.chessBoard.pieceAtSquare[toSquare].remove();
-        }
-
-        this.attr('x', x * SQUARE_PIXELS + PIECE_OFFSET);
-        this.attr('y', y * SQUARE_PIXELS + PIECE_OFFSET);
-
-        this.paper.chessBoard.pieceAtSquare[toSquare] = this;
-        this.paper.chessBoard.pieceAtSquare[fromSquare] = null;
+        this.paper.chessBoard.makeMove(move, true);
     } else {
         // Put back in place
         console.log('Illegal move');
@@ -163,16 +188,23 @@ ChessBoard.pieceEnd = function(event) {
     this.paper.chessBoard.getBoardFromValidator();
 }
 
-var boards;
+var boards, socket;
 
 $(document).ready(function() {
     // Set up socket.io
-    var socket = io.connect('http://localhost');
-    socket.on('news', function (data) {
+    socket = io.connect('http://localhost');
+
+    socket.on('news', function(data) {
         console.log(data);
-        socket.emit('my other event', { my: 'data' });
     });
 
-    // Create two boards
+    // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
+
+    socket.on('make_move', function(data) {
+        var move = data['move'];
+        var number = parseInt(move[0]);
+        move = move.substring(2, move.length);
+        boards[number].makeMove(move, false);
+    });
 });
