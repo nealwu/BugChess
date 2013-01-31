@@ -4,9 +4,10 @@ var app = require('http').createServer(handler),
     io = require('socket.io').listen(app),
     fs = require('fs');
 
-app.listen(1000);
+app.listen(80);
 
 function handler(req, res) {
+    console.log(req + ' ' + res);
     fs.readFile(__dirname + '/index.html',
     function(err, data) {
         if (err) {
