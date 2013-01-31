@@ -194,10 +194,6 @@ $(document).ready(function() {
     // Set up socket.io
     socket = io.connect('http://localhost');
 
-    socket.on('news', function(data) {
-        console.log(data);
-    });
-
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
 

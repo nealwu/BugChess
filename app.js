@@ -21,8 +21,6 @@ function handler(req, res) {
 
 io.sockets.on('connection', function(socket) {
     socket.join(ROOM);
-    io.sockets.in(ROOM).emit('news', { hello: 'world' });
-    console.log(io.sockets.clients(ROOM));
 
     socket.on('make_move', function(data) {
         io.sockets.in(ROOM).emit('make_move', data);
