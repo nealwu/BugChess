@@ -140,7 +140,7 @@ ChessBoard.pieceEnd = function(event) {
     console.log(move);
 
     // Check for validity
-    if (x >= 0 && x < 8 && y >= 0 && y < 8 && this.paper.chessBoard.validator.isLegalMove(move)) {
+    if (this.paper.chessBoard.validator.isInsideBoard(x, y) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
         this.paper.chessBoard.validator.makeMove(move);
 
