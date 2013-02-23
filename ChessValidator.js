@@ -124,11 +124,25 @@ ChessValidator.prototype.initialize = function() {
         this.setPieceAtSquare(square, STARTING_BOARD[square]);
     }
 
+    this.bank = {};
+    this.bank[WHITE] = {QUEEN: 0, ROOK: 0, BISHOP: 0, KNIGHT: 0, PAWN: 0};
+    this.bank[BLACK] = {QUEEN: 0, ROOK: 0, BISHOP: 0, KNIGHT: 0, PAWN: 0};
+
     this.turn = WHITE;
+    this.lastMove = '';
+}
+
+ChessValidator.prototype.bankToStr = function(bank) {
+    return QUEEN + ': ' + bank[QUEEN] + ' ' +
+            ROOK + ': ' + bank[ROOK] + ' ' +
+            BISHOP + ': ' + bank[BISHOP] + ' ' +
+            KNIGHT + ': ' + bank[KNIGHT] + ' ' +
+            PAWN + ': ' + bank[PAWN];
 }
 
 ChessValidator.prototype.printBoard = function() {
-//    for (var y = BOARD_SIZE - 1; y >= 0; y--) {
+    console.log(BLACK + ' = ' + bankToStr(this.bank[BLACK]));
+
     for (var y = 0; y < BOARD_SIZE; y++) {
         var line = '';
 
@@ -142,6 +156,8 @@ ChessValidator.prototype.printBoard = function() {
 
         console.log(line);
     }
+
+    console.log(WHITE + ' = ' + bankToStr(this.bank[WHITE]));
 }
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
@@ -541,6 +557,12 @@ ChessValidator.prototype.isLegalMove = function(move) {
     } else {
         // Case 2: dropped piece
 
+        var piece = move[2];
+
+        if (!(this.bank[this.turn][piece] > 0)) {
+            return false;
+        }
+
         // TODO: check for validity here too
         var square = move.substring(3, 5);
 
@@ -626,6 +648,8 @@ ChessValidator.prototype.fromAndToSquares = function(move) {
         var piece = move[0] + move[2];
         var square = move.substring(3, 5);
         this.setPieceAtSquare(square, piece);
+        // Decrement the bank
+        this.bank[move[0]][move[2]]--;
         return [square, square];
     }
 }
@@ -646,7 +670,7 @@ ChessValidator.prototype.makeMove = function(move) {
         var squares = this.fromAndToSquares(move);
         var from = squares[0], to = squares[1];
         this.hasMoved[from] = this.hasMoved[to] = true;
-
+        this.lastMove = move;
         return true;
     }
 
