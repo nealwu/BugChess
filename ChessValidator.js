@@ -558,8 +558,9 @@ ChessValidator.prototype.isLegalMove = function(move) {
         // Case 2: dropped piece
 
         var piece = move[2];
+        var bankCount = this.bank[this.turn][piece];
 
-        if (!(this.bank[this.turn][piece] > 0)) {
+        if (bankCount === undefined || bankCount <= 0) {
             return false;
         }
 
