@@ -1,7 +1,10 @@
 SQUARE_PIXELS = 60;
-BOARD_PIXELS = 8 * SQUARE_PIXELS;
 PIECE_OFFSET = 3;
 PIECE_PIXELS = SQUARE_PIXELS - 2 * PIECE_OFFSET;
+BANK_PIXELS = SQUARE_PIXELS;
+BANK_HORIZ_BUFFER = 8;
+BOARD_WIDTH = 8 * SQUARE_PIXELS;
+BOARD_HEIGHT = 8 * SQUARE_PIXELS + 2 * BANK_PIXELS;
 
 WHITE = 'W';
 BLACK = 'B';
@@ -15,6 +18,8 @@ KING = 'K';
 EMPTY = '.';
 EMPTY2 = EMPTY + EMPTY;
 
+BANK_ORDER = [QUEEN, ROOK, BISHOP, KNIGHT, PAWN];
+
 // Class for chess boards. number is the index of the board (0 or 1).
 function ChessBoard(number) {
     this.number = number;
@@ -22,8 +27,35 @@ function ChessBoard(number) {
     this.initBoard();
 }
 
+ChessBoard.prototype.placePiece = function(name, square) {
+    var coords = this.squareToCoordinates(square);
+    var piece = this.raphael.image('images/pieces/' + name + '.svg',
+        coords[0] * SQUARE_PIXELS + PIECE_OFFSET, BANK_PIXELS + coords[1] * SQUARE_PIXELS + PIECE_OFFSET, PIECE_PIXELS, PIECE_PIXELS);
+    piece.data('name', name);
+    piece.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
+    this.pieceAtSquare[square] = piece;
+    return piece;
+}
+
+ChessBoard.prototype.placeBank = function(player, bankIndex) {
+    var bankY = player == this.bottomPlayer ? BOARD_HEIGHT - BANK_PIXELS : 0;
+    var piece = BANK_ORDER[bankIndex];
+    var name = player + piece;
+
+    var x = BOARD_WIDTH * bankIndex / BANK_ORDER.length + PIECE_OFFSET;
+    var y = bankY + PIECE_OFFSET;
+
+    var image = this.raphael.image('images/pieces/' + name + '.svg',
+        BOARD_WIDTH * bankIndex / BANK_ORDER.length + PIECE_OFFSET, bankY + PIECE_OFFSET, PIECE_PIXELS, PIECE_PIXELS);
+    image.data('name', name);
+    // TODO: image.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
+    this.bank[player][piece] = [image, 0];
+    var text = this.raphael.text(x + PIECE_PIXELS + BANK_HORIZ_BUFFER, y + PIECE_PIXELS / 2, ':0').attr('font-size', 24);
+    return image;
+}
+
 ChessBoard.prototype.initBoard = function() {
-    this.raphael = Raphael('board' + this.number, BOARD_PIXELS, BOARD_PIXELS);
+    this.raphael = Raphael('board' + this.number, BOARD_WIDTH, BOARD_HEIGHT);
     this.raphael.chessBoard = this;
 
     // Set up the 64 squares
@@ -34,19 +66,35 @@ ChessBoard.prototype.initBoard = function() {
         for (var y = 0; y < 8; y++) {
             // Choose between light brown and dark brown
             var squareColor = (x + y) % 2 == 0 ? '#f0d9b5' : '#b58863';
-            this.boardSquares[x][y] = this.raphael.rect(x * SQUARE_PIXELS, y * SQUARE_PIXELS, SQUARE_PIXELS, SQUARE_PIXELS)
+            this.boardSquares[x][y] = this.raphael.rect(x * SQUARE_PIXELS, BANK_PIXELS + y * SQUARE_PIXELS, SQUARE_PIXELS, SQUARE_PIXELS)
                 .attr('fill', squareColor)
                 .attr('stroke-width', 0);
         }
     }
 
-    this.validator = new ChessValidator();
+    // Place pieces
     this.pieceAtSquare = {};
 
     for (square in STARTING_BOARD) {
         var name = STARTING_BOARD[square];
-        var piece = this.placePiece(name, square);
+        this.placePiece(name, square);
     }
+
+    // Set up the two banks
+    var bankColor = '#ccc';
+    this.raphael.rect(0, 0, BOARD_WIDTH, BANK_PIXELS).attr('fill', bankColor);
+    this.raphael.rect(0, BOARD_HEIGHT - BANK_PIXELS, BOARD_WIDTH, BANK_PIXELS).attr('fill', bankColor);
+
+    this.bank = {};
+    this.bank[WHITE] = {};
+    this.bank[BLACK] = {};
+
+    for (i in BANK_ORDER) {
+        this.placeBank(WHITE, i);
+        this.placeBank(BLACK, i);
+    }
+
+    this.validator = new ChessValidator();
 }
 
 ChessBoard.allSquares = function() {
@@ -63,7 +111,6 @@ ChessBoard.allSquares = function() {
 
 ChessBoard.prototype.getBoardFromValidator = function() {
     // Get rid of all the pieces on the board
-
     for (square in this.pieceAtSquare) {
         var piece = this.pieceAtSquare[square];
         if (piece) {
@@ -80,6 +127,8 @@ ChessBoard.prototype.getBoardFromValidator = function() {
             this.placePiece(name, squares[i]);
         }
     }
+
+
 }
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
@@ -107,16 +156,6 @@ ChessBoard.prototype.coordinatesToSquare = function(x, y) {
     } else {
         return String.fromCharCode('h'.charCodeAt(0) - x, y + '1'.charCodeAt(0));
     }
-}
-
-ChessBoard.prototype.placePiece = function(name, square) {
-    var coords = this.squareToCoordinates(square);
-    var piece = this.raphael.image('images/pieces/' + name + '.svg',
-        coords[0] * SQUARE_PIXELS + PIECE_OFFSET, coords[1] * SQUARE_PIXELS + PIECE_OFFSET, PIECE_PIXELS, PIECE_PIXELS);
-    piece.data('name', name);
-    piece.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
-    this.pieceAtSquare[square] = piece;
-    return piece;
 }
 
 ChessBoard.pieceStart = function(x, y, event) {
@@ -152,7 +191,7 @@ ChessBoard.prototype.makeMove = function(move, emit) {
         }
 
         this.pieceAtSquare[fromSquare].attr('x', toCoords[0] * SQUARE_PIXELS + PIECE_OFFSET);
-        this.pieceAtSquare[fromSquare].attr('y', toCoords[1] * SQUARE_PIXELS + PIECE_OFFSET);
+        this.pieceAtSquare[fromSquare].attr('y', BANK_PIXELS + toCoords[1] * SQUARE_PIXELS + PIECE_OFFSET);
 
         this.pieceAtSquare[toSquare] = this.pieceAtSquare[fromSquare];
         this.pieceAtSquare[fromSquare] = null;
@@ -162,18 +201,25 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     return false;
 }
 
+ChessBoard.prototype.pixelsToSquare = function(x, y) {
+    var squareX = Math.floor(x / SQUARE_PIXELS);
+    var squareY = Math.floor((y - BANK_PIXELS) / SQUARE_PIXELS);
+    console.log(squareX + ' ' + squareY);
+    return this.coordinatesToSquare(squareX, squareY);
+}
+
 ChessBoard.pieceEnd = function(event) {
     // Get the coordinates of the piece's center
     var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
-    var x = Math.floor(centerX / SQUARE_PIXELS), y = Math.floor(centerY / SQUARE_PIXELS);
-    var toSquare = this.paper.chessBoard.coordinatesToSquare(x, y);
-    var fromSquare = this.paper.chessBoard.coordinatesToSquare(Math.floor(this.data('originalX') / SQUARE_PIXELS), Math.floor(this.data('originalY') / SQUARE_PIXELS));
+    var toSquare = this.paper.chessBoard.pixelsToSquare(centerX, centerY);
+    var toCoords = this.paper.chessBoard.squareToCoordinates(toSquare);
+    var fromSquare = this.paper.chessBoard.pixelsToSquare(this.data('originalX'), this.data('originalY'));
     var player = this.data('name')[0];
     var move = player + '_' + fromSquare + '-' + toSquare;
     console.log(move);
 
     // Check for validity
-    if (this.paper.chessBoard.validator.isInsideBoard(x, y) && this.paper.chessBoard.validator.isLegalMove(move)) {
+    if (this.paper.chessBoard.validator.isInsideBoard(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
         this.paper.chessBoard.makeMove(move, true);
     } else {

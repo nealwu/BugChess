@@ -127,7 +127,7 @@ ChessValidator.prototype.initialize = function() {
     this.bank = {};
     this.bank[WHITE] = {};
     this.bank[BLACK] = {};
-    this.bank[WHITE][QUEEN] = this.bank[WHITE][ROOK] = this.bank[WHITE][BISHOP] = this.bank[WHITE][KNIGHT] = this.bank[WHITE][PAWN] = 1;
+    this.bank[WHITE][QUEEN] = this.bank[WHITE][ROOK] = this.bank[WHITE][BISHOP] = this.bank[WHITE][KNIGHT] = this.bank[WHITE][PAWN] = 0;
     this.bank[BLACK][QUEEN] = this.bank[BLACK][ROOK] = this.bank[BLACK][BISHOP] = this.bank[BLACK][KNIGHT] = this.bank[BLACK][PAWN] = 0;
 
     this.turn = WHITE;
