@@ -125,23 +125,25 @@ ChessValidator.prototype.initialize = function() {
     }
 
     this.bank = {};
-    this.bank[WHITE] = {QUEEN: 0, ROOK: 0, BISHOP: 0, KNIGHT: 0, PAWN: 0};
-    this.bank[BLACK] = {QUEEN: 0, ROOK: 0, BISHOP: 0, KNIGHT: 0, PAWN: 0};
+    this.bank[WHITE] = {};
+    this.bank[BLACK] = {};
+    this.bank[WHITE][QUEEN] = this.bank[WHITE][ROOK] = this.bank[WHITE][BISHOP] = this.bank[WHITE][KNIGHT] = this.bank[WHITE][PAWN] = 1;
+    this.bank[BLACK][QUEEN] = this.bank[BLACK][ROOK] = this.bank[BLACK][BISHOP] = this.bank[BLACK][KNIGHT] = this.bank[BLACK][PAWN] = 0;
 
     this.turn = WHITE;
     this.lastMove = '';
 }
 
 ChessValidator.prototype.bankToStr = function(bank) {
-    return QUEEN + ': ' + bank[QUEEN] + ' ' +
-            ROOK + ': ' + bank[ROOK] + ' ' +
-            BISHOP + ': ' + bank[BISHOP] + ' ' +
-            KNIGHT + ': ' + bank[KNIGHT] + ' ' +
-            PAWN + ': ' + bank[PAWN];
+    return QUEEN + ':' + bank[QUEEN] + ' ' +
+            ROOK + ':' + bank[ROOK] + ' ' +
+            BISHOP + ':' + bank[BISHOP] + ' ' +
+            KNIGHT + ':' + bank[KNIGHT] + ' ' +
+            PAWN + ':' + bank[PAWN];
 }
 
 ChessValidator.prototype.printBoard = function() {
-    console.log(BLACK + ' = ' + bankToStr(this.bank[BLACK]));
+    console.log(BLACK + ' = ' + this.bankToStr(this.bank[BLACK]));
 
     for (var y = 0; y < BOARD_SIZE; y++) {
         var line = '';
@@ -157,7 +159,7 @@ ChessValidator.prototype.printBoard = function() {
         console.log(line);
     }
 
-    console.log(WHITE + ' = ' + bankToStr(this.bank[WHITE]));
+    console.log(WHITE + ' = ' + this.bankToStr(this.bank[WHITE]));
 }
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
