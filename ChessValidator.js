@@ -648,11 +648,7 @@ ChessValidator.prototype.fromAndToSquares = function(move) {
         return [from, to];
     } else {
         // Case 2: dropped piece
-        var piece = move[0] + move[2];
         var square = move.substring(3, 5);
-        this.setPieceAtSquare(square, piece);
-        // Decrement the bank
-        this.bank[move[0]][move[2]]--;
         return [square, square];
     }
 }
@@ -666,6 +662,25 @@ ChessValidator.prototype.makeMove = function(move) {
 
     // Call simulateMove
     if (this.isLegalMove(move)) {
+        // Check for captures; send the capture to the other board's bank
+        if (this.other !== undefined && isLowerCase(move[2])) {
+            var name = this.getPieceAtSquare(move.substring(5, 7));
+
+            if (name != EMPTY2) {
+                var player = name[0];
+                var piece = name[1];
+                this.other.validator.bank[player][piece]++;
+                this.other.getBoardFromValidator();
+            }
+        }
+
+        // Check for dropped pieces
+        if (move[2] != '0' && !isLowerCase(move[2])) {
+            var player = move[0];
+            var piece = move[2];
+            this.bank[player][piece]--;
+        }
+
         this.simulateMove(move);
         this.turn = this.turn == WHITE ? BLACK : WHITE;
 

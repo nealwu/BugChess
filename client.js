@@ -1,5 +1,5 @@
 SQUARE_PIXELS = 60;
-PIECE_OFFSET = 3;
+PIECE_OFFSET = 0;
 PIECE_PIXELS = SQUARE_PIXELS - 2 * PIECE_OFFSET;
 BANK_PIXELS = SQUARE_PIXELS;
 BANK_HORIZ_BUFFER = 8;
@@ -19,6 +19,7 @@ EMPTY = '.';
 EMPTY2 = EMPTY + EMPTY;
 
 BANK_ORDER = [QUEEN, ROOK, BISHOP, KNIGHT, PAWN];
+BANK_FONT_SIZE = 24;
 
 // Class for chess boards. number is the index of the board (0 or 1).
 function ChessBoard(number) {
@@ -37,10 +38,18 @@ ChessBoard.prototype.placePiece = function(name, square) {
     return piece;
 }
 
-ChessBoard.prototype.placeBank = function(player, bankIndex) {
+// placeBank actually places a new image
+ChessBoard.prototype.placeBank = function(player, bankIndex, initial) {
+    initial = initial === undefined ? 0 : initial;
+
     var bankY = player == this.bottomPlayer ? BOARD_HEIGHT - BANK_PIXELS : 0;
     var piece = BANK_ORDER[bankIndex];
     var name = player + piece;
+
+    if (this.bank[player][piece] !== undefined) {
+        // Remove the text previously associated with the piece
+        this.bank[player][piece][1].remove();
+    }
 
     var x = BOARD_WIDTH * bankIndex / BANK_ORDER.length + PIECE_OFFSET;
     var y = bankY + PIECE_OFFSET;
@@ -48,10 +57,25 @@ ChessBoard.prototype.placeBank = function(player, bankIndex) {
     var image = this.raphael.image('images/pieces/' + name + '.svg',
         BOARD_WIDTH * bankIndex / BANK_ORDER.length + PIECE_OFFSET, bankY + PIECE_OFFSET, PIECE_PIXELS, PIECE_PIXELS);
     image.data('name', name);
+    image.data('bankIndex', bankIndex);
     // TODO: image.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
-    this.bank[player][piece] = [image, 0];
-    var text = this.raphael.text(x + PIECE_PIXELS + BANK_HORIZ_BUFFER, y + PIECE_PIXELS / 2, ':0').attr('font-size', 24);
+    var text = this.raphael.text(x + PIECE_PIXELS + BANK_HORIZ_BUFFER, y + PIECE_PIXELS / 2, ':' + initial).attr('font-size', BANK_FONT_SIZE);
+    this.bank[player][piece] = [image, text, initial];
+    image.drag(ChessBoard.bankMove, ChessBoard.bankStart, ChessBoard.bankEnd);
     return image;
+}
+
+// changeBank just modifies the text and number
+ChessBoard.prototype.changeBank = function(player, piece, count) {
+    if (this.bank[player][piece] === undefined) {
+        console.log('changeBank called before bank was created!');
+    }
+
+    var text = this.bank[player][piece][1];
+    var textX = text.attr('x'), textY = text.attr('y');
+    text.remove();
+    this.bank[player][piece][1] = this.raphael.text(textX, textY, ':' + count).attr('font-size', BANK_FONT_SIZE);
+    this.bank[player][piece][2] = count;
 }
 
 ChessBoard.prototype.initBoard = function() {
@@ -121,6 +145,7 @@ ChessBoard.prototype.getBoardFromValidator = function() {
 
     // Grab all the pieces in the validator and then put them on the board
     var squares = ChessBoard.allSquares();
+
     for (i in squares) {
         var name = this.validator.getPieceAtSquare(squares[i]);
         if (name != EMPTY2) {
@@ -128,7 +153,16 @@ ChessBoard.prototype.getBoardFromValidator = function() {
         }
     }
 
+    var players = [WHITE, BLACK];
 
+    for (i in players) {
+        var player = players[i];
+
+        for (i in BANK_ORDER) {
+            var piece = BANK_ORDER[i];
+            this.changeBank(player, piece, this.validator.bank[player][piece]);
+        }
+    }
 }
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
@@ -177,28 +211,15 @@ ChessBoard.prototype.makeMove = function(move, emit) {
 
     // Send the move to the server
     if (emit) {
-        socket.emit('make_move', { move: this.number + '_' + move});
+        this.lastMove = move;
+        var emitMove = this.number + '_' + move;
+        socket.emit('make_move', { move: emitMove});
+        console.log('Sending: ' + emitMove);
+    } else {
+        this.getBoardFromValidator();
     }
 
-    // Move pieces on the front end
-    if (move.length == 7 && this.validator.isValidSquare(move.substring(2, 4)) && this.validator.isValidSquare(move.substring(5, 7))) {
-        var fromSquare = move.substring(2, 4);
-        var toSquare = move.substring(5, 7);
-        var toCoords = this.squareToCoordinates(toSquare);
-
-        if (this.pieceAtSquare[toSquare]) {
-            this.pieceAtSquare[toSquare].remove();
-        }
-
-        this.pieceAtSquare[fromSquare].attr('x', toCoords[0] * SQUARE_PIXELS + PIECE_OFFSET);
-        this.pieceAtSquare[fromSquare].attr('y', BANK_PIXELS + toCoords[1] * SQUARE_PIXELS + PIECE_OFFSET);
-
-        this.pieceAtSquare[toSquare] = this.pieceAtSquare[fromSquare];
-        this.pieceAtSquare[fromSquare] = null;
-        return true;
-    }
-
-    return false;
+    return true;
 }
 
 ChessBoard.prototype.pixelsToSquare = function(x, y) {
@@ -232,6 +253,60 @@ ChessBoard.pieceEnd = function(event) {
     this.paper.chessBoard.getBoardFromValidator();
 }
 
+ChessBoard.bankStart = function(x, y, event) {
+    var name = this.data('name');
+    var player = name[0];
+    var piece = name[1];
+    var bank = this.paper.chessBoard.bank[player][piece];
+
+    if (bank[2] > 0) {
+        var bankIndex = this.data('bankIndex');
+        this.paper.chessBoard.placeBank(player, bankIndex, bank[2]);
+        this.data('originalX', this.attr('x'));
+        this.data('originalY', this.attr('y'));
+    }
+}
+
+ChessBoard.bankMove = function(dx, dy, x, y, event) {
+    var name = this.data('name');
+    var player = name[0];
+    var piece = name[1];
+    var bank = this.paper.chessBoard.bank[player][piece];
+
+    if (bank[2] > 0) {
+        this.attr('x', this.data('originalX') + dx);
+        this.attr('y', this.data('originalY') + dy);
+    }
+}
+
+ChessBoard.bankEnd = function(event) {
+    var name = this.data('name');
+    var player = name[0];
+    var piece = name[1];
+    var bank = this.paper.chessBoard.bank[player][piece];
+
+    // Get the coordinates of the piece's center
+    var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
+    var toSquare = this.paper.chessBoard.pixelsToSquare(centerX, centerY);
+    var toCoords = this.paper.chessBoard.squareToCoordinates(toSquare);
+    var move = player + '_' + piece + toSquare;
+    console.log(move);
+
+    // Check for validity
+    if (bank[2] > 0 && this.paper.chessBoard.validator.isInsideBoard(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
+        console.log('Legal move!');
+        this.paper.chessBoard.makeMove(move, true);
+        this.paper.chessBoard.pieceAtSquare[toSquare] = this;
+    } else {
+        // Put back in place
+        console.log('Illegal move');
+        this.attr('x', this.data('originalX'));
+        this.attr('y', this.data('originalY'));
+    }
+
+    this.paper.chessBoard.getBoardFromValidator();
+}
+
 var boards, socket;
 
 $(document).ready(function() {
@@ -240,11 +315,17 @@ $(document).ready(function() {
 
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
+    boards[0].validator.other = boards[1];
+    boards[1].validator.other = boards[0];
 
     socket.on('make_move', function(data) {
         var move = data['move'];
+        console.log('Received: ' + move);
         var number = parseInt(move[0]);
         move = move.substring(2, move.length);
-        boards[number].makeMove(move, false);
+
+        if (boards[number].lastMove != move) {
+            boards[number].makeMove(move, false);
+        }
     });
 });
