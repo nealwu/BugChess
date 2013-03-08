@@ -144,25 +144,22 @@ ChessBoard.prototype.getBoardFromValidator = function() {
     }
 
     // Grab all the pieces in the validator and then put them on the board
-    var squares = ChessBoard.allSquares();
+    var self = this;
 
-    for (i in squares) {
-        var name = this.validator.getPieceAtSquare(squares[i]);
+    ChessBoard.allSquares().forEach(function(square) {
+        var name = self.validator.getPieceAtSquare(square);
+
         if (name != EMPTY2) {
-            this.placePiece(name, squares[i]);
+            self.placePiece(name, square);
         }
-    }
+    });
 
-    var players = [WHITE, BLACK];
-
-    for (i in players) {
-        var player = players[i];
-
+    [WHITE, BLACK].forEach(function(player) {
         for (i in BANK_ORDER) {
             var piece = BANK_ORDER[i];
-            this.changeBank(player, piece, this.validator.bank[player][piece]);
+            self.changeBank(player, piece, self.validator.bank[player][piece]);
         }
-    }
+    });
 }
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
@@ -240,7 +237,7 @@ ChessBoard.pieceEnd = function(event) {
     console.log(move);
 
     // Check for validity
-    if (this.paper.chessBoard.validator.isInsideBoard(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
+    if (this.paper.chessBoard.validator.validCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
         this.paper.chessBoard.makeMove(move, true);
     } else {
@@ -293,7 +290,7 @@ ChessBoard.bankEnd = function(event) {
     console.log(move);
 
     // Check for validity
-    if (bank[2] > 0 && this.paper.chessBoard.validator.isInsideBoard(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
+    if (bank[2] > 0 && this.paper.chessBoard.validator.validCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
         this.paper.chessBoard.makeMove(move, true);
         this.paper.chessBoard.pieceAtSquare[toSquare] = this;
