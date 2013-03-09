@@ -1,5 +1,3 @@
-// TODO: add asserts and clean up code
-
 BOARD_SIZE = 8;
 
 SQUARE_PIXELS = 64;
