@@ -166,8 +166,11 @@ ChessBoard.prototype.getBoardFromValidator = function() {
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
 // (0, 0) = 'a8'; (7, 7) = 'h1'
-ChessBoard.prototype.squareToCoordinates = function(square) {
-    assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.squareToCoordinates: ' + square);
+ChessBoard.prototype.squareToCoordinates = function(square, skipAssert) {
+    if (!skipAssert) {
+        assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.squareToCoordinates: ' + square);
+    }
+
     var x = square.charCodeAt(0) - 'a'.charCodeAt(0);
     var y = '8'.charCodeAt(0) - square.charCodeAt(1);
 
@@ -179,8 +182,10 @@ ChessBoard.prototype.squareToCoordinates = function(square) {
     }
 }
 
-ChessBoard.prototype.coordinatesToSquare = function(x, y) {
-    assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessBoard.coordinatesToSquare: ' + x + ', ' + y);
+ChessBoard.prototype.coordinatesToSquare = function(x, y, skipAssert) {
+    if (!skipAssert) {
+        assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessBoard.coordinatesToSquare: ' + x + ', ' + y);
+    }
 
     // If the bottom player is black, flip the coordinates
     if (this.bottomPlayer == WHITE) {
@@ -210,10 +215,15 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     return true;
 }
 
-ChessBoard.prototype.pixelsToSquare = function(x, y) {
+ChessBoard.prototype.pixelsToCoordinates = function(x, y) {
     var squareX = Math.floor(x / SQUARE_PIXELS);
     var squareY = Math.floor((y - BANK_PIXELS) / SQUARE_PIXELS);
-    return this.coordinatesToSquare(squareX, squareY);
+    return [squareX, squareY];
+}
+
+ChessBoard.prototype.pixelsToSquare = function(x, y) {
+    var coords = this.pixelsToCoordinates(x, y);
+    return this.coordinatesToSquare(coords[0], coords[1], true);
 }
 
 ChessBoard.pieceStart = function(x, y, event) {
@@ -230,7 +240,7 @@ ChessBoard.pieceEnd = function(event) {
     // Get the coordinates of the piece's center
     var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
     var toSquare = this.paper.chessBoard.pixelsToSquare(centerX, centerY);
-    var toCoords = this.paper.chessBoard.squareToCoordinates(toSquare);
+    var toCoords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
     var fromSquare = this.paper.chessBoard.pixelsToSquare(this.data('originalX'), this.data('originalY'));
     var player = this.data('name')[0];
     var move = player + '_' + fromSquare + '-' + toSquare;
@@ -285,7 +295,7 @@ ChessBoard.bankEnd = function(event) {
     // Get the coordinates of the piece's center
     var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
     var toSquare = this.paper.chessBoard.pixelsToSquare(centerX, centerY);
-    var toCoords = this.paper.chessBoard.squareToCoordinates(toSquare);
+    var toCoords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
     var move = player + '_' + piece + toSquare;
     console.log(move);
 
