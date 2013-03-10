@@ -293,6 +293,9 @@ ChessBoard.bankEnd = function(event) {
     if (count > 0 && ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
         this.paper.chessBoard.makeMove(move, true);
+
+        // Set it in the array so it can be removed later
+        this.paper.chessBoard.pieceAtSquare[toSquare] = this;
     } else {
         // Put back in place
         console.log('Illegal move');
@@ -311,8 +314,8 @@ $(document).ready(function() {
 
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
-    boards[0].validator.other = boards[1];
-    boards[1].validator.other = boards[0];
+    boards[0].validator.otherBoard = boards[1];
+    boards[1].validator.otherBoard = boards[0];
 
     socket.on('make_move', function(data) {
         var move = data['move'];
