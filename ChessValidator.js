@@ -634,6 +634,10 @@ ChessValidator.prototype.isLegalMove = function(move) {
         if (!ChessValidator.isValidSquare(square) || !this.isEmptyAtSquare(square)) {
             return false;
         }
+
+        if (piece == PAWN && (square[1] == '1' || square[1] == '8')) {
+            return false;
+        }
     }
 
     // Must not end up in check
