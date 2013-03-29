@@ -671,6 +671,25 @@ ChessValidator.prototype.legalMoves = function(x, y) {
 // Also two potential castling moves
 }
 
+ChessValidator.prototype.isEnPassant = function(move) {
+    if (isLowerCase(move[2]) && move.length >= 7) {
+        var from = move.substring(2, 4);
+        var to = move.substring(5, 7);
+
+        if (ChessValidator.isValidSquare(from) && ChessValidator.isValidSquare(to)) {
+            var fromCoords = this.squareToCoordinates(from);
+            var toCoords = this.squareToCoordinates(to);
+            var name = this.getPieceAtSquare(from).name;
+
+            if (name[1] == PAWN && fromCoords[0] != toCoords[0] && this.isEmptyAtSquare(to)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 // TODO: simulateMove should return a list of what was captured
 ChessValidator.prototype.simulateMove = function(move, castleHack) {
     if (castleHack === undefined || !castleHack) {
@@ -709,7 +728,7 @@ ChessValidator.prototype.simulateMove = function(move, castleHack) {
         var name = this.getPieceAtSquare(from).name;
 
         // Check for en passant
-        if (name[1] == PAWN && fromCoords[0] != toCoords[0] && this.isEmptyAtSquare(to)) {
+        if (this.isEnPassant(move)) {
             this.setPieceAt(toCoords[0], fromCoords[1], EMPTY2);
         }
 
@@ -778,6 +797,13 @@ ChessValidator.prototype.makeMove = function(move) {
         // Check for captures; send the capture to the other board's bank
         if (this.otherBoard !== undefined && isLowerCase(move[2])) {
             var chessPiece = this.getPieceAtSquare(to);
+
+            if (this.isEnPassant(move)) {
+                var fromCoords = this.squareToCoordinates(from);
+                var toCoords = this.squareToCoordinates(to);
+                chessPiece = this.getPieceAt(toCoords[0], fromCoords[1]);
+            }
+
             var name = chessPiece.name;
 
             if (name != EMPTY2) {
