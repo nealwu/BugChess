@@ -150,7 +150,7 @@ ChessBoard.prototype.getBoardFromValidator = function() {
     var self = this;
 
     ChessValidator.allSquares().forEach(function(square) {
-        var name = self.validator.getPieceAtSquare(square);
+        var name = self.validator.getPieceAtSquare(square).name;
 
         if (name != EMPTY2) {
             self.placePiece(name, square);
@@ -304,16 +304,14 @@ ChessBoard.bankEnd = function(event) {
         console.log('Legal move!');
         this.paper.chessBoard.makeMove(move, true);
 
-        // Set it in the array so it can be removed later
+        // Set it in the array so it can be removed
         this.paper.chessBoard.pieceAtSquare[toSquare] = this;
+        this.paper.chessBoard.getBoardFromValidator();
     } else {
         // Put back in place
         console.log('Illegal move');
-        this.attr('x', this.data('originalX'));
-        this.attr('y', this.data('originalY'));
+        this.remove();
     }
-
-    this.paper.chessBoard.getBoardFromValidator();
 }
 
 var boards, socket;
