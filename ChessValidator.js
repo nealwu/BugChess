@@ -592,8 +592,8 @@ ChessValidator.prototype.isLegalMove = function(move) {
                 if (Math.abs(dy) > 2) {
                     return false;
                 } else if (Math.abs(dy) == 2) {
-                    // Must be on the first row of pawns
-                    if (fromCoords[1] != (move[0] == WHITE ? 6 : 1)) {
+                    // Must have not yet moved
+                    if (this.getPieceAtSquare(from).hasMoved) {
                         return false;
                     }
 
