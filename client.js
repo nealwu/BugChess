@@ -266,12 +266,11 @@ ChessBoard.bankStart = function(x, y, event) {
     var piece = name[1];
     var count = this.paper.chessBoard.bank[player][piece][2];
 
-    if (count > 0) {
-        var bankIndex = this.data('bankIndex');
-        this.paper.chessBoard.placeBank(player, bankIndex, count);
-        this.data('originalX', this.attr('x'));
-        this.data('originalY', this.attr('y'));
-    }
+    // Create a copy, even if count == 0.
+    var bankIndex = this.data('bankIndex');
+    this.paper.chessBoard.placeBank(player, bankIndex, count);
+    this.data('originalX', this.attr('x'));
+    this.data('originalY', this.attr('y'));
 }
 
 ChessBoard.bankMove = function(dx, dy, x, y, event) {
@@ -280,6 +279,7 @@ ChessBoard.bankMove = function(dx, dy, x, y, event) {
     var piece = name[1];
     var count = this.paper.chessBoard.bank[player][piece][2];
 
+    // Don't let the piece move if count == 0.
     if (count > 0) {
         this.attr('x', this.data('originalX') + dx);
         this.attr('y', this.data('originalY') + dy);
