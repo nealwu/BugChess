@@ -1,8 +1,11 @@
 var express = require('express'),
-    app = express(),
-    server = require('http').createServer(app),
-    io = require('socket.io').listen(server),
-    path = require('path');
+    app     = express(),
+    server  = require('http').createServer(app),
+    io      = require('socket.io').listen(server),
+    path    = require('path');
+
+var validator = require('./public/javascripts/ChessValidator');
+var ChessValidator = validator.ChessValidator;
 
 app.configure(function() {
     app.set('port', process.env.PORT || 80);

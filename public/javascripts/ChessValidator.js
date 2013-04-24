@@ -795,7 +795,7 @@ ChessValidator.prototype.makeMove = function(move) {
         // TODO: capture and en passant needs to be sent to the other board
 
         // Check for captures; send the capture to the other board's bank
-        if (this.otherBoard !== undefined && isLowerCase(move[2])) {
+        if (this.otherValidator !== undefined && isLowerCase(move[2])) {
             var chessPiece = this.getPieceAtSquare(to);
 
             if (this.isEnPassant(move)) {
@@ -809,9 +809,9 @@ ChessValidator.prototype.makeMove = function(move) {
             if (name != EMPTY2) {
                 var player = name[0];
                 var originalPiece = chessPiece.originalPiece;
+                this.otherValidator.bank[player][originalPiece]++;
 
                 if (this.otherBoard !== undefined) {
-                    this.otherBoard.validator.bank[player][originalPiece]++;
                     this.otherBoard.getBoardFromValidator();
                 }
             }
@@ -837,3 +837,12 @@ ChessValidator.prototype.makeMove = function(move) {
 }
 
 var x = new ChessValidator();
+
+exports = {
+    ChessValidator: ChessValidator,
+    ChessPiece: ChessPiece
+};
+
+if (typeof module != 'undefined') {
+    module.exports = exports;
+}

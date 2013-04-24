@@ -320,6 +320,8 @@ $(document).ready(function() {
 
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
+    boards[0].validator.otherValidator = boards[1].validator;
+    boards[1].validator.otherValidator = boards[0].validator;
     boards[0].validator.otherBoard = boards[1];
     boards[1].validator.otherBoard = boards[0];
 
