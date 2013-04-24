@@ -1,23 +1,34 @@
+var express = require('express'),
+    app = express(),
+    server = require('http').createServer(app),
+    io = require('socket.io').listen(server),
+    path = require('path');
+
+app.configure(function() {
+    app.set('port', process.env.PORT || 80);
+    app.set('views', __dirname + '/views');
+    app.set('view engine', 'jade');
+    app.use(express.favicon());
+    app.use(express.logger('dev'));
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(app.router);
+    app.use(express.static(path.join(__dirname, 'public')));
+
+    app.engine('html', require('ejs').__express);
+});
+
+app.configure('development', function() {
+    app.use(express.errorHandler({ showStack: true, dumpExceptions: true }));
+});
+
+app.get('/', function(req, res) {
+    res.render('index.html');
+});
+
+server.listen(app.get('port'));
+
 ROOM = 'room';
-
-var app = require('http').createServer(handler),
-    io = require('socket.io').listen(app),
-    fs = require('fs');
-
-app.listen(80);
-
-function handler(req, res) {
-    fs.readFile(__dirname + '/index.html',
-    function(err, data) {
-        if (err) {
-            res.writeHead(500);
-            return res.end('Error loading index.html');
-        }
-
-        res.writeHead(200);
-        res.end(data);
-    });
-}
 
 io.sockets.on('connection', function(socket) {
     socket.join(ROOM);
