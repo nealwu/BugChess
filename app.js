@@ -23,7 +23,7 @@ app.configure('development', function() {
 });
 
 app.get('/', function(req, res) {
-    res.render('index.html');
+    res.sendfile('views/index.html');
 });
 
 server.listen(app.get('port'));
