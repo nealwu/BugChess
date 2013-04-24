@@ -41,7 +41,7 @@ ChessBoard.prototype.placePiece = function(name, square) {
     assert(ChessValidator.isValidName(name), 'Invalid name given to ChessBoard.placePiece: ' + name);
     assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.placePiece: ' + square);
     var coords = this.squareToCoordinates(square);
-    var piece = this.raphael.image('images/pieces/' + name + '.svg',
+    var piece = this.raphael.image('/images/pieces/' + name + '.svg',
         coords[0] * SQUARE_PIXELS + PIECE_OFFSET, BANK_PIXELS + coords[1] * SQUARE_PIXELS + PIECE_OFFSET, PIECE_PIXELS, PIECE_PIXELS);
     piece.data('name', name);
     piece.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
@@ -67,7 +67,7 @@ ChessBoard.prototype.placeBank = function(player, bankIndex, initial) {
     var x = BOARD_WIDTH * bankIndex / BANK_ORDER.length + PIECE_OFFSET;
     var y = bankY + PIECE_OFFSET;
 
-    var image = this.raphael.image('images/pieces/' + name + '.svg', x, y, PIECE_PIXELS, PIECE_PIXELS);
+    var image = this.raphael.image('/images/pieces/' + name + '.svg', x, y, PIECE_PIXELS, PIECE_PIXELS);
     image.data('name', name);
     image.data('bankIndex', bankIndex);
     image.drag(ChessBoard.bankMove, ChessBoard.bankStart, ChessBoard.bankEnd);
@@ -135,25 +135,24 @@ ChessBoard.prototype.initBoard = function() {
 }
 
 ChessBoard.prototype.getBoardFromValidator = function() {
-    // Get rid of all the pieces on the board
-    for (square in this.pieceAtSquare) {
-        var piece = this.pieceAtSquare[square];
-
-        if (piece) {
-            piece.remove();
-        }
-
-        this.pieceAtSquare[square] = null;
-    }
-
-    // Grab all the pieces in the validator and then put them on the board
     var self = this;
 
+    // For each square, check the current piece and the validator piece and see if they're different
     ChessValidator.allSquares().forEach(function(square) {
-        var name = self.validator.getPieceAtSquare(square).name;
+        var piece = self.pieceAtSquare[square];
+        var name = piece ? piece.data('name') : EMPTY2;
 
-        if (name != EMPTY2) {
-            self.placePiece(name, square);
+        var validatorName = self.validator.getPieceAtSquare(square).name;
+
+        if (name != validatorName) {
+            if (name != EMPTY2) {
+                piece.remove();
+                self.pieceAtSquare[square] = null;
+            }
+
+            if (validatorName != EMPTY2) {
+                self.placePiece(validatorName, square);
+            }
         }
     });
 
@@ -298,27 +297,26 @@ ChessBoard.bankEnd = function(event) {
     var toCoords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
     var move = player + '_' + piece + toSquare;
     console.log(move);
+    var chessBoard = this.paper.chessBoard;
 
     // Check for validity
     if (count > 0 && ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
-        this.paper.chessBoard.makeMove(move, true);
-
-        // Set it in the array so it can be removed
-        this.paper.chessBoard.pieceAtSquare[toSquare] = this;
-        this.paper.chessBoard.getBoardFromValidator();
+        chessBoard.makeMove(move, true);
     } else {
         // Put back in place
         console.log('Illegal move');
-        this.remove();
     }
+
+    this.remove();
+    chessBoard.getBoardFromValidator();
 }
 
 var boards, socket;
 
 $(document).ready(function() {
     // Set up socket.io
-    socket = io.connect('http://localhost');
+    socket = io.connect('localhost');
 
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
