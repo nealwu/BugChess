@@ -326,7 +326,7 @@ $(document).ready(function() {
     boards[1].validator.otherBoard = boards[0];
 
     socket.on('make_move', function(data) {
-        var move = data['move'];
+        var move = data.move;
         console.log('Received: ' + move);
         var number = parseInt(move[0]);
         move = move.substring(2, move.length);

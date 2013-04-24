@@ -838,11 +838,10 @@ ChessValidator.prototype.makeMove = function(move) {
 
 var x = new ChessValidator();
 
-exports = {
-    ChessValidator: ChessValidator,
-    ChessPiece: ChessPiece
-};
+exports = ChessValidator;
 
+// Hack: will only be true if on the server
 if (typeof module != 'undefined') {
     module.exports = exports;
+    $ = require('jquery');
 }
