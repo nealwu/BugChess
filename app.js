@@ -21,7 +21,7 @@ app.configure('development', function() {
 });
 
 app.get('/', function(req, res) {
-    res.sendfile('views/index.html');
+    res.sendfile(__dirname + '/views/index.html');
 });
 
 server.listen(app.get('port'));
