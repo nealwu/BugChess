@@ -316,7 +316,7 @@ var boards, socket;
 
 $(document).ready(function() {
     // Set up socket.io
-    socket = io.connect('http://localhost:8000');
+    socket = io.connect('http://nealwu.com:8000');
 
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
