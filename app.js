@@ -11,7 +11,7 @@ validators[0].otherValidator = validators[1];
 validators[1].otherValidator = validators[0];
 
 app.configure(function() {
-    app.set('port', process.env.PORT || 80);
+    app.set('port', process.env.PORT || 8000);
     app.set('views', __dirname + '/views');
     // app.set('view engine', 'jade');
     app.use(express.favicon());
@@ -57,6 +57,7 @@ io.sockets.on('connection', function(socket) {
         }
 
         io.sockets.in(ROOM).emit('make_move', data);
+        console.log('Legal move!');
         return true;
     });
 });
