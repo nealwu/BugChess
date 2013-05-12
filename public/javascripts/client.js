@@ -42,17 +42,27 @@ Timer.pad = function(seconds) {
     return seconds < 10 ? '0' + seconds : '' + seconds;
 }
 
+Timer.prototype.outOfTime = function() {
+    return this.minutes == 0 && this.seconds == 0;
+}
+
 Timer.prototype.display = function() {
     $('#' + this.id).html(this.minutes + ':' + Timer.pad(this.seconds));
+
+    if (this.outOfTime()) {
+        $('#' + this.id).css('color', 'red');
+    }
 }
 
 Timer.prototype.decrement = function() {
-    if (this.seconds == 0) {
-        this.seconds += 60;
+    if (this.seconds > 0)
+        this.seconds--;
+    else if (this.minutes > 0)
+    {
         this.minutes--;
+        this.seconds = 59;
     }
 
-    this.seconds--;
     this.display();
 }
 
@@ -286,7 +296,7 @@ ChessBoard.pieceEnd = function(event) {
     console.log(move);
 
     // Check for validity
-    if (ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
+    if (ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move) && !this.paper.chessBoard.timers[move[0]].outOfTime()) {
         console.log('Legal move!');
         this.paper.chessBoard.makeMove(move, true);
     } else {
