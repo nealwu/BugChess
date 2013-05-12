@@ -1,12 +1,14 @@
 BOARD_SIZE = 8;
 
-SQUARE_PIXELS = 64;
+SQUARE_PIXELS = 62;
 PIECE_OFFSET = 0;
 PIECE_PIXELS = SQUARE_PIXELS - 2 * PIECE_OFFSET;
 BANK_PIXELS = SQUARE_PIXELS;
 BANK_HORIZ_BUFFER = 8;
 BOARD_WIDTH = BOARD_SIZE * SQUARE_PIXELS;
 BOARD_HEIGHT = BOARD_SIZE * SQUARE_PIXELS + 2 * BANK_PIXELS;
+
+TIMER_MINUTES = 5;
 
 WHITE = 'W';
 BLACK = 'B';
@@ -30,10 +32,33 @@ function assert(result, description) {
     }
 }
 
+function Timer(initial, id) {
+    this.minutes = initial;
+    this.seconds = 0;
+    this.id = id;
+}
+
+Timer.pad = function(seconds) {
+    return seconds < 10 ? '0' + seconds : '' + seconds;
+}
+
+Timer.prototype.display = function() {
+    $('#' + this.id).html(this.minutes + ':' + Timer.pad(this.seconds));
+}
+
+Timer.prototype.decrement = function() {
+    if (this.seconds == 0) {
+        this.seconds += 60;
+        this.minutes--;
+    }
+
+    this.seconds--;
+    this.display();
+}
+
 // Class for chess boards. number is the index of the board (0 or 1).
 function ChessBoard(number) {
     this.number = number;
-    this.bottomPlayer = this.number == 0 ? WHITE : BLACK;
     this.initBoard();
 }
 
@@ -92,6 +117,8 @@ ChessBoard.prototype.changeBank = function(player, piece, count) {
 }
 
 ChessBoard.prototype.initBoard = function() {
+    this.bottomPlayer = this.number == 0 ? WHITE : BLACK;
+
     this.raphael = Raphael('board' + this.number, BOARD_WIDTH, BOARD_HEIGHT);
     this.raphael.chessBoard = this;
 
@@ -132,6 +159,14 @@ ChessBoard.prototype.initBoard = function() {
     }
 
     this.validator = new ChessValidator();
+    this.timers = {};
+    this.timers[WHITE] = new Timer(TIMER_MINUTES, 'timer' + this.number + '_' + WHITE);
+    this.timers[BLACK] = new Timer(TIMER_MINUTES, 'timer' + this.number + '_' + BLACK);
+
+    var self = this;
+    this.timerInterval = setInterval(function() {
+        self.timers[WHITE].decrement();
+    }, 1000);
 }
 
 ChessBoard.prototype.getBoardFromValidator = function() {
@@ -200,6 +235,11 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     }
 
     this.validator.makeMove(move);
+    clearInterval(this.timerInterval);
+    var self = this;
+    this.timerInterval = setInterval(function() {
+        self.timers[self.validator.turn].decrement();
+    }, 1000);
 
     // Send the move to the server
     if (emit) {

@@ -4,9 +4,23 @@
 
 .board_div {
     display: inline-block;
+    position: relative;
+    top: -15px;
 }
 
 .right_board {
     margin-top: 25px;
     margin-left: 50px;
+}
+
+.timer {
+    font-family: Helvetica, Arial, Sans-Serif;
+}
+
+.timer0 {
+    float: left;
+}
+
+.timer1 {
+    float: right;
 }
