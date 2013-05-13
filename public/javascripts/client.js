@@ -8,8 +8,6 @@ BANK_HORIZ_BUFFER = 8;
 BOARD_WIDTH = BOARD_SIZE * SQUARE_PIXELS;
 BOARD_HEIGHT = BOARD_SIZE * SQUARE_PIXELS + 2 * BANK_PIXELS;
 
-TIMER_MINUTES = 5;
-
 WHITE = 'W';
 BLACK = 'B';
 
@@ -35,19 +33,30 @@ function assert(result, description) {
 function Timer(initial, id) {
     this.minutes = initial;
     this.seconds = 0;
+    this.decimal = 0;
     this.id = id;
+    this.display();
 }
+
+Timer.INITIAL = 5;
+Timer.INTERVAL = 100;
 
 Timer.pad = function(seconds) {
     return seconds < 10 ? '0' + seconds : '' + seconds;
 }
 
 Timer.prototype.outOfTime = function() {
-    return this.minutes == 0 && this.seconds == 0;
+    return this.minutes == 0 && this.seconds == 0 && this.decimal == 0;
 }
 
 Timer.prototype.display = function() {
-    $('#' + this.id).html(this.minutes + ':' + Timer.pad(this.seconds));
+    var output = this.minutes + ':' + Timer.pad(this.seconds);
+
+    if (this.minutes == 0) {
+        output += '.' + this.decimal;
+    }
+
+    $('#' + this.id).html(output);
 
     if (this.outOfTime()) {
         $('#' + this.id).css('color', 'red');
@@ -55,12 +64,18 @@ Timer.prototype.display = function() {
 }
 
 Timer.prototype.decrement = function() {
-    if (this.seconds > 0)
+    if (this.decimal > 0)
+        this.decimal--;
+    else if (this.seconds > 0)
+    {
         this.seconds--;
+        this.decimal = 9;
+    }
     else if (this.minutes > 0)
     {
         this.minutes--;
         this.seconds = 59;
+        this.decimal = 9;
     }
 
     this.display();
@@ -170,13 +185,13 @@ ChessBoard.prototype.initBoard = function() {
 
     this.validator = new ChessValidator();
     this.timers = {};
-    this.timers[WHITE] = new Timer(TIMER_MINUTES, 'timer' + this.number + '_' + WHITE);
-    this.timers[BLACK] = new Timer(TIMER_MINUTES, 'timer' + this.number + '_' + BLACK);
+    this.timers[WHITE] = new Timer(Timer.INITIAL, 'timer' + this.number + '_' + WHITE);
+    this.timers[BLACK] = new Timer(Timer.INITIAL, 'timer' + this.number + '_' + BLACK);
 
     var self = this;
     this.timerInterval = setInterval(function() {
         self.timers[WHITE].decrement();
-    }, 1000);
+    }, Timer.INTERVAL);
 }
 
 ChessBoard.prototype.getBoardFromValidator = function() {
@@ -249,7 +264,7 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     var self = this;
     this.timerInterval = setInterval(function() {
         self.timers[self.validator.turn].decrement();
-    }, 1000);
+    }, Timer.INTERVAL);
 
     // Send the move to the server
     if (emit) {
