@@ -1,6 +1,11 @@
 BOARD_SIZE = 8;
 
-SQUARE_PIXELS = 60;
+if (navigator.userAgent.indexOf('iPhone') == -1) {
+    SQUARE_PIXELS = 60;
+} else {
+    SQUARE_PIXELS = 45;
+}
+
 PIECE_OFFSET = 0;
 PIECE_PIXELS = SQUARE_PIXELS - 2 * PIECE_OFFSET;
 BANK_PIXELS = SQUARE_PIXELS;
