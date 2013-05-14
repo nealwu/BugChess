@@ -19,6 +19,9 @@ app.configure(function() {
     app.use(express.methodOverride());
     app.use(app.router);
     app.use(express.static(path.join(__dirname, 'public')));
+
+    // Don't output debug logs
+    io.set('log level', 2);
 });
 
 app.configure('development', function() {
@@ -56,6 +59,7 @@ io.sockets.on('connection', function(socket) {
     });
 
     socket.on('make_move', function(move) {
+        console.log('ID: ' + socket.id);
         if (move === undefined) {
             console.log('No move received!');
             return false;
