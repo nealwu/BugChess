@@ -55,13 +55,11 @@ io.sockets.on('connection', function(socket) {
         sendUpdate();
     });
 
-    socket.on('make_move', function(data) {
-        if (data === undefined || data.move === undefined) {
+    socket.on('make_move', function(move) {
+        if (move === undefined) {
             console.log('No move received!');
             return false;
         }
-
-        var move = data.move;
 
         console.log('Server received: ' + move);
         var number = parseInt(move[0]);

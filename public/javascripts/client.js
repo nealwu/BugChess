@@ -1,6 +1,6 @@
 BOARD_SIZE = 8;
 
-SQUARE_PIXELS = 62;
+SQUARE_PIXELS = 60;
 PIECE_OFFSET = 0;
 PIECE_PIXELS = SQUARE_PIXELS - 2 * PIECE_OFFSET;
 BANK_PIXELS = SQUARE_PIXELS;
@@ -270,7 +270,7 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     if (emit) {
         this.lastMove = move;
         var emitMove = this.number + '_' + move;
-        socket.emit('make_move', {move: emitMove});
+        socket.emit('make_move', emitMove);
         console.log('Sending: ' + emitMove);
     } else {
         this.getBoardFromValidator();
