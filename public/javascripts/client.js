@@ -199,6 +199,14 @@ ChessBoard.prototype.initBoard = function() {
     }, Timer.INTERVAL);
 }
 
+ChessBoard.prototype.resetTimer = function(player) {
+    clearInterval(this.timerInterval);
+    var self = this;
+    this.timerInterval = setInterval(function() {
+        self.timers[self.validator.turn].decrement();
+    }, Timer.INTERVAL);
+}
+
 ChessBoard.prototype.getBoardFromValidator = function() {
     var self = this;
 
@@ -265,11 +273,7 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     }
 
     this.validator.makeMove(move);
-    clearInterval(this.timerInterval);
-    var self = this;
-    this.timerInterval = setInterval(function() {
-        self.timers[self.validator.turn].decrement();
-    }, Timer.INTERVAL);
+    this.resetTimer();
 
     // Send the move to the server
     if (emit) {
@@ -415,5 +419,7 @@ $(document).ready(function() {
         // Display on front-end
         boards[0].getBoardFromValidator();
         boards[1].getBoardFromValidator();
+        boards[0].resetTimer();
+        boards[1].resetTimer();
     });
 });
