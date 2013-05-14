@@ -13,14 +13,18 @@
     margin-left: 50px;
 }
 
-.timer {
+.timer, .name {
     font-family: Helvetica, Arial, Sans-Serif;
 }
 
-.timer0 {
+.timer {
+    font-weight: bold;
+}
+
+.timer0, .name1 {
     float: left;
 }
 
-.timer1 {
+.timer1, .name0 {
     float: right;
 }

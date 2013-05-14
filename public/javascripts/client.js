@@ -377,27 +377,34 @@ ChessBoard.bankEnd = function(event) {
     chessBoard.getBoardFromValidator();
 }
 
-var boards, socket;
-
-$(document).ready(function() {
-    // Set up socket.io
-    socket = io.connect('http://nealwu.com:8000');
-
-    // Create two boards AFTER the socket is connected
-    boards = [new ChessBoard(0), new ChessBoard(1)];
+function makeLinks() {
     boards[0].validator.otherValidator = boards[1].validator;
     boards[1].validator.otherValidator = boards[0].validator;
     boards[0].validator.otherBoard = boards[1];
     boards[1].validator.otherBoard = boards[0];
+}
 
-    socket.on('make_move', function(data) {
-        var move = data.move;
-        console.log('Received: ' + move);
-        var number = parseInt(move[0]);
-        move = move.substring(2, move.length);
+var boards, socket;
 
-        if (boards[number].lastMove != move) {
-            boards[number].makeMove(move, false);
-        }
+$(document).ready(function() {
+    // Set up socket.io
+    socket = io.connect('http://localhost:8000');
+
+    // Create two boards AFTER the socket is connected
+    boards = [new ChessBoard(0), new ChessBoard(1)];
+    makeLinks();
+
+    socket.emit('request_update');
+
+    socket.on('update', function(validators) {
+        boards[0].validator = validators[0];
+        boards[1].validator = validators[1];
+        makeLinks();
+        // Preserve prototypes; sort of hacky
+        boards[0].validator.__proto__ = (new ChessValidator()).__proto__;
+        boards[1].validator.__proto__ = (new ChessValidator()).__proto__;
+        // Display on front-end
+        boards[0].getBoardFromValidator();
+        boards[1].getBoardFromValidator();
     });
 });

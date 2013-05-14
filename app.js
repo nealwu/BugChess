@@ -7,8 +7,7 @@ var express = require('express'),
 var ChessValidator = require('./public/javascripts/ChessValidator');
 
 var validators = [new ChessValidator(), new ChessValidator()];
-validators[0].otherValidator = validators[1];
-validators[1].otherValidator = validators[0];
+makeLinks();
 
 app.configure(function() {
     app.set('port', process.env.PORT || 8000);
@@ -34,30 +33,52 @@ server.listen(app.get('port'));
 
 ROOM = 'room';
 
+function makeLinks() {
+    validators[0].otherValidator = validators[1];
+    validators[1].otherValidator = validators[0];
+}
+
+function killLinks() {
+    validators[0].otherValidator = validators[1].otherValidator = null;
+}
+
+function sendUpdate() {
+    killLinks();
+    io.sockets.in(ROOM).emit('update', validators);
+    makeLinks();
+}
+
 io.sockets.on('connection', function(socket) {
     socket.join(ROOM);
 
-    socket.on('make_move', function(data) {
-        var move = data.move;
+    socket.on('request_update', function() {
+        sendUpdate();
+    });
 
-        if (move === undefined) {
+    socket.on('make_move', function(data) {
+        if (data === undefined || data.move === undefined) {
+            console.log('No move received!');
             return false;
         }
+
+        var move = data.move;
 
         console.log('Server received: ' + move);
         var number = parseInt(move[0]);
         move = move.substring(2, move.length);
 
-        if (number < 0 || number > 1) {
+        if (number != 0 && number != 1) {
+            console.log('Illegal move!');
             return false;
         }
 
         if (!validators[number].makeMove(move)) {
+            console.log('Illegal move!');
             return false;
         }
 
-        io.sockets.in(ROOM).emit('make_move', data);
         console.log('Legal move!');
+        sendUpdate();
         return true;
     });
 });
