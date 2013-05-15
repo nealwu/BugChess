@@ -36,14 +36,13 @@ function assert(result, description) {
 }
 
 function Timer(initial, id) {
-    this.minutes = initial;
-    this.seconds = 0;
-    this.decimal = 0;
+    this.getFromMilliseconds(initial);
     this.id = id;
     this.display();
 }
 
-Timer.INITIAL = 5;
+Timer.INITIAL_MINUTES = 5;
+Timer.INITIAL_MILLISECONDS = Timer.INITIAL_MINUTES * 60 * 1000
 Timer.INTERVAL = 100;
 
 Timer.pad = function(seconds) {
@@ -51,14 +50,14 @@ Timer.pad = function(seconds) {
 }
 
 Timer.prototype.outOfTime = function() {
-    return this.minutes == 0 && this.seconds == 0 && this.decimal == 0;
+    return this.minutes == 0 && this.seconds == 0 && this.milliseconds == 0;
 }
 
 Timer.prototype.display = function() {
     var output = this.minutes + ':' + Timer.pad(this.seconds);
 
     if (this.minutes == 0) {
-        output += '.' + this.decimal;
+        output += '.' + Math.floor(this.milliseconds / 100);
     }
 
     $('#' + this.id).html(output);
@@ -68,21 +67,28 @@ Timer.prototype.display = function() {
     }
 }
 
-Timer.prototype.decrement = function() {
-    if (this.decimal > 0)
-        this.decimal--;
-    else if (this.seconds > 0)
-    {
-        this.seconds--;
-        this.decimal = 9;
-    }
-    else if (this.minutes > 0)
-    {
-        this.minutes--;
-        this.seconds = 59;
-        this.decimal = 9;
-    }
+Timer.prototype.toMilliseconds = function() {
+    return this.minutes * 60 * 1000 + this.seconds * 1000 + this.milliseconds;
+}
 
+Timer.prototype.getFromMilliseconds = function(milliseconds) {
+    this.minutes = Math.floor(milliseconds / 1000 / 60);
+    this.seconds = Math.floor(milliseconds / 1000 % 60);
+    this.milliseconds = milliseconds % 1000;
+
+    if (this.minutes < 0) {
+        this.minutes = this.seconds = this.milliseconds = 0;
+    }
+}
+
+Timer.prototype.subtractMilliseconds = function(milliseconds) {
+    this.getFromMilliseconds(this.toMilliseconds() - milliseconds);
+}
+
+Timer.prototype.updateTime = function() {
+    var now = new Date();
+    this.subtractMilliseconds(now - this.startTime);
+    this.startTime = now;
     this.display();
 }
 
@@ -190,20 +196,21 @@ ChessBoard.prototype.initBoard = function() {
 
     this.validator = new ChessValidator();
     this.timers = {};
-    this.timers[WHITE] = new Timer(Timer.INITIAL, 'timer' + this.number + '_' + WHITE);
-    this.timers[BLACK] = new Timer(Timer.INITIAL, 'timer' + this.number + '_' + BLACK);
-
-    var self = this;
-    this.timerInterval = setInterval(function() {
-        self.timers[WHITE].decrement();
-    }, Timer.INTERVAL);
+    this.timers[WHITE] = new Timer(Timer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + WHITE);
+    this.timers[BLACK] = new Timer(Timer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + BLACK);
+    this.startTimer();
 }
 
-ChessBoard.prototype.resetTimer = function(player) {
-    clearInterval(this.timerInterval);
+ChessBoard.prototype.startTimer = function(startTime) {
+    if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+    }
+
+    this.timers[this.validator.turn].startTime = startTime ? startTime : new Date();
     var self = this;
+
     this.timerInterval = setInterval(function() {
-        self.timers[self.validator.turn].decrement();
+        self.timers[self.validator.turn].updateTime();
     }, Timer.INTERVAL);
 }
 
@@ -273,7 +280,7 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     }
 
     this.validator.makeMove(move);
-    this.resetTimer();
+    this.startTimer();
 
     // Send the move to the server
     if (emit) {
@@ -406,20 +413,21 @@ $(document).ready(function() {
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
     makeLinks();
-
     socket.emit('request_update');
+
+    var prototype = (new ChessValidator()).__proto__;
 
     socket.on('update', function(validators) {
         boards[0].validator = validators[0];
         boards[1].validator = validators[1];
         makeLinks();
         // Preserve prototypes; sort of hacky
-        boards[0].validator.__proto__ = (new ChessValidator()).__proto__;
-        boards[1].validator.__proto__ = (new ChessValidator()).__proto__;
+        boards[0].validator.__proto__ = prototype;
+        boards[1].validator.__proto__ = prototype;
         // Display on front-end
         boards[0].getBoardFromValidator();
         boards[1].getBoardFromValidator();
-        boards[0].resetTimer();
-        boards[1].resetTimer();
+        boards[0].startTimer();
+        boards[1].startTimer();
     });
 });
