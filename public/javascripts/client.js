@@ -35,60 +35,29 @@ function assert(result, description) {
     }
 }
 
-function Timer(initial, id) {
-    this.getFromMilliseconds(initial);
+function DisplayTimer(initial, id) {
+    Timer.call(this, initial);
     this.id = id;
     this.display();
 }
 
-Timer.INITIAL_MINUTES = 5;
-Timer.INITIAL_MILLISECONDS = Timer.INITIAL_MINUTES * 60 * 1000
-Timer.INTERVAL = 100;
+DisplayTimer.prototype = new Timer();
+DisplayTimer.prototype.constructor = DisplayTimer;
 
-Timer.pad = function(seconds) {
-    return seconds < 10 ? '0' + seconds : '' + seconds;
-}
+DisplayTimer.INITIAL_MINUTES = Timer.INITIAL_MINUTES;
+DisplayTimer.INITIAL_MILLISECONDS = Timer.INITIAL_MILLISECONDS;
+DisplayTimer.INTERVAL = 100;
 
-Timer.prototype.outOfTime = function() {
-    return this.minutes == 0 && this.seconds == 0 && this.milliseconds == 0;
-}
-
-Timer.prototype.display = function() {
-    var output = this.minutes + ':' + Timer.pad(this.seconds);
-
-    if (this.minutes == 0) {
-        output += '.' + Math.floor(this.milliseconds / 100);
-    }
-
-    $('#' + this.id).html(output);
+DisplayTimer.prototype.display = function() {
+    $('#' + this.id).html(this.toString());
 
     if (this.outOfTime()) {
         $('#' + this.id).css('color', 'red');
     }
 }
 
-Timer.prototype.toMilliseconds = function() {
-    return this.minutes * 60 * 1000 + this.seconds * 1000 + this.milliseconds;
-}
-
-Timer.prototype.getFromMilliseconds = function(milliseconds) {
-    this.minutes = Math.floor(milliseconds / 1000 / 60);
-    this.seconds = Math.floor(milliseconds / 1000 % 60);
-    this.milliseconds = milliseconds % 1000;
-
-    if (this.minutes < 0) {
-        this.minutes = this.seconds = this.milliseconds = 0;
-    }
-}
-
-Timer.prototype.subtractMilliseconds = function(milliseconds) {
-    this.getFromMilliseconds(this.toMilliseconds() - milliseconds);
-}
-
-Timer.prototype.updateTime = function() {
-    var now = new Date();
-    this.subtractMilliseconds(now - this.startTime);
-    this.startTime = now;
+DisplayTimer.prototype.updateTime = function() {
+    Timer.prototype.updateTime.call(this);
     this.display();
 }
 
@@ -196,8 +165,8 @@ ChessBoard.prototype.initBoard = function() {
 
     this.validator = new ChessValidator();
     this.timers = {};
-    this.timers[WHITE] = new Timer(Timer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + WHITE);
-    this.timers[BLACK] = new Timer(Timer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + BLACK);
+    this.timers[WHITE] = new DisplayTimer(DisplayTimer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + WHITE);
+    this.timers[BLACK] = new DisplayTimer(DisplayTimer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + BLACK);
     this.startTimer();
 }
 
@@ -211,7 +180,7 @@ ChessBoard.prototype.startTimer = function(startTime) {
 
     this.timerInterval = setInterval(function() {
         self.timers[self.validator.turn].updateTime();
-    }, Timer.INTERVAL);
+    }, DisplayTimer.INTERVAL);
 }
 
 ChessBoard.prototype.getBoardFromValidator = function() {
@@ -415,15 +384,13 @@ $(document).ready(function() {
     makeLinks();
     socket.emit('request_update');
 
-    var prototype = (new ChessValidator()).__proto__;
-
     socket.on('update', function(validators) {
         boards[0].validator = validators[0];
         boards[1].validator = validators[1];
         makeLinks();
         // Preserve prototypes; sort of hacky
-        boards[0].validator.__proto__ = prototype;
-        boards[1].validator.__proto__ = prototype;
+        boards[0].validator.__proto__ = ChessValidator.prototype;
+        boards[1].validator.__proto__ = ChessValidator.prototype;
         // Display on front-end
         boards[0].getBoardFromValidator();
         boards[1].getBoardFromValidator();

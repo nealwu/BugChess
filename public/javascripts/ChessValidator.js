@@ -93,6 +93,55 @@ function arrayContains(array, elem) {
     return false;
 }
 
+function Timer(initial) {
+    this.getFromMilliseconds(initial);
+}
+
+Timer.INITIAL_MINUTES = 5;
+Timer.INITIAL_MILLISECONDS = Timer.INITIAL_MINUTES * 60 * 1000
+
+Timer.pad = function(seconds) {
+    return seconds < 10 ? '0' + seconds : '' + seconds;
+}
+
+Timer.prototype.outOfTime = function() {
+    return this.minutes == 0 && this.seconds == 0 && this.milliseconds == 0;
+}
+
+Timer.prototype.toString = function() {
+    var output = this.minutes + ':' + Timer.pad(this.seconds);
+
+    if (this.minutes == 0) {
+        output += '.' + Math.floor(this.milliseconds / 100);
+    }
+
+    return output;
+}
+
+Timer.prototype.toMilliseconds = function() {
+    return this.minutes * 60 * 1000 + this.seconds * 1000 + this.milliseconds;
+}
+
+Timer.prototype.getFromMilliseconds = function(milliseconds) {
+    this.minutes = Math.floor(milliseconds / 1000 / 60);
+    this.seconds = Math.floor(milliseconds / 1000 % 60);
+    this.milliseconds = milliseconds % 1000;
+
+    if (this.minutes < 0) {
+        this.minutes = this.seconds = this.milliseconds = 0;
+    }
+}
+
+Timer.prototype.subtractMilliseconds = function(milliseconds) {
+    this.getFromMilliseconds(this.toMilliseconds() - milliseconds);
+}
+
+Timer.prototype.updateTime = function() {
+    var now = new Date();
+    this.subtractMilliseconds(now - this.startTime);
+    this.startTime = now;
+}
+
 function ChessPiece(name) {
     this.name = name;
     this.originalPiece = name[1];
@@ -835,8 +884,6 @@ ChessValidator.prototype.makeMove = function(move) {
 
     return false;
 }
-
-var x = new ChessValidator();
 
 exports = ChessValidator;
 
