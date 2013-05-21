@@ -109,13 +109,7 @@ Timer.prototype.outOfTime = function() {
 }
 
 Timer.prototype.toString = function() {
-    var output = this.minutes + ':' + Timer.pad(this.seconds);
-
-    if (this.minutes == 0) {
-        output += '.' + Math.floor(this.milliseconds / 100);
-    }
-
-    return output;
+    return this.minutes + ':' + Timer.pad(this.seconds) + '.' + Math.floor(this.milliseconds / 100);
 }
 
 Timer.prototype.toMilliseconds = function() {
@@ -137,7 +131,7 @@ Timer.prototype.subtractMilliseconds = function(milliseconds) {
 }
 
 Timer.prototype.updateTime = function() {
-    var now = new Date();
+    var now = (new Date()).valueOf();
     this.subtractMilliseconds(now - this.startTime);
     this.startTime = now;
 }
@@ -217,8 +211,13 @@ ChessValidator.prototype.initialize = function() {
     this.bank[WHITE][QUEEN] = this.bank[WHITE][ROOK] = this.bank[WHITE][BISHOP] = this.bank[WHITE][KNIGHT] = this.bank[WHITE][PAWN] = 0;
     this.bank[BLACK][QUEEN] = this.bank[BLACK][ROOK] = this.bank[BLACK][BISHOP] = this.bank[BLACK][KNIGHT] = this.bank[BLACK][PAWN] = 0;
 
+    this.timers = {};
+    this.timers[WHITE] = new Timer(Timer.INITIAL_MILLISECONDS);
+    this.timers[BLACK] = new Timer(Timer.INITIAL_MILLISECONDS);
+
     this.turn = WHITE;
     this.lastMove = '';
+    this.firstMove = true;
 }
 
 ChessValidator.prototype.bankToString = function(bank) {
@@ -504,6 +503,15 @@ ChessValidator.prototype.isLegalMove = function(move) {
     // Can't move on your opponent's turn.
     if (move[0] != this.turn) {
         return false;
+    }
+
+    if (!this.firstMove) {
+        this.timers[this.turn].updateTime();
+
+        // Illegal if out of time
+        if (this.timers[this.turn].outOfTime()) {
+            return false;
+        }
     }
 
     if (move[2] == '0') {
@@ -837,6 +845,18 @@ ChessValidator.prototype.undoMove = function(previousBoard) {
 }
 
 ChessValidator.prototype.makeMove = function(move) {
+    var now = (new Date()).valueOf();
+
+    if (this.firstMove) {
+        this.firstMove = false;
+        this.timers[this.turn].startTime = now;
+
+        if (this.otherValidator) {
+            this.otherValidator.firstMove = false;
+            this.otherValidator.timers[this.otherValidator.turn].startTime = now;
+        }
+    }
+
     if (this.isLegalMove(move)) {
         var squares = this.fromAndToSquares(move);
         var from = squares[0], to = squares[1];
@@ -879,6 +899,7 @@ ChessValidator.prototype.makeMove = function(move) {
         // Update hasMoved
         this.getPieceAtSquare(from).hasMoved = this.getPieceAtSquare(to).hasMoved = true;
         this.lastMove = move;
+        this.timers[this.turn].startTime = now;
         return true;
     }
 

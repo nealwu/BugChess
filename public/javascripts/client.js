@@ -1,9 +1,9 @@
 BOARD_SIZE = 8;
 
-if (navigator.userAgent.indexOf('iPhone') == -1) {
-    SQUARE_PIXELS = 60;
-} else {
+if (navigator.userAgent.indexOf('iPhone') != -1 || navigator.userAgent.indexOf('iPad') != -1) {
     SQUARE_PIXELS = 45;
+} else {
+    SQUARE_PIXELS = 60;
 }
 
 PIECE_OFFSET = 0;
@@ -38,6 +38,7 @@ function assert(result, description) {
 function DisplayTimer(initial, id) {
     Timer.call(this, initial);
     this.id = id;
+    this.startTime = (new Date()).valueOf();
     this.display();
 }
 
@@ -47,6 +48,13 @@ DisplayTimer.prototype.constructor = DisplayTimer;
 DisplayTimer.INITIAL_MINUTES = Timer.INITIAL_MINUTES;
 DisplayTimer.INITIAL_MILLISECONDS = Timer.INITIAL_MILLISECONDS;
 DisplayTimer.INTERVAL = 100;
+
+DisplayTimer.prototype.getFromTimer = function(timer) {
+    this.minutes = timer.minutes;
+    this.seconds = timer.seconds;
+    this.milliseconds = timer.milliseconds;
+    this.startTime = timer.startTime;
+}
 
 DisplayTimer.prototype.display = function() {
     $('#' + this.id).html(this.toString());
@@ -167,7 +175,6 @@ ChessBoard.prototype.initBoard = function() {
     this.timers = {};
     this.timers[WHITE] = new DisplayTimer(DisplayTimer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + WHITE);
     this.timers[BLACK] = new DisplayTimer(DisplayTimer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + BLACK);
-    this.startTimer();
 }
 
 ChessBoard.prototype.startTimer = function(startTime) {
@@ -175,7 +182,7 @@ ChessBoard.prototype.startTimer = function(startTime) {
         clearInterval(this.timerInterval);
     }
 
-    this.timers[this.validator.turn].startTime = startTime ? startTime : new Date();
+    this.timers[this.validator.turn].startTime = startTime || (new Date()).valueOf();
     var self = this;
 
     this.timerInterval = setInterval(function() {
@@ -210,6 +217,20 @@ ChessBoard.prototype.getBoardFromValidator = function() {
             self.changeBank(player, piece, self.validator.bank[player][piece]);
         });
     });
+
+    [WHITE, BLACK].forEach(function(player) {
+        self.timers[player].getFromTimer(self.validator.timers[player]);
+
+        if (self.validator.turn == player && !self.validator.firstMove) {
+            self.timers[player].updateTime();
+        }
+
+        self.timers[player].display();
+    });
+
+    if (!this.validator.firstMove) {
+        this.startTimer();
+    }
 }
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
@@ -296,7 +317,7 @@ ChessBoard.pieceEnd = function(event) {
     console.log(move);
 
     // Check for validity
-    if (ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move) && !this.paper.chessBoard.timers[move[0]].outOfTime()) {
+    if (ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
         this.paper.chessBoard.makeMove(move, true);
     } else {
@@ -305,8 +326,6 @@ ChessBoard.pieceEnd = function(event) {
         this.attr('x', this.data('originalX'));
         this.attr('y', this.data('originalY'));
     }
-
-    this.paper.chessBoard.getBoardFromValidator();
 }
 
 ChessBoard.bankStart = function(x, y, event) {
@@ -359,7 +378,6 @@ ChessBoard.bankEnd = function(event) {
     }
 
     this.remove();
-    chessBoard.getBoardFromValidator();
 }
 
 function makeLinks() {
@@ -367,6 +385,15 @@ function makeLinks() {
     boards[1].validator.otherValidator = boards[0].validator;
     boards[0].validator.otherBoard = boards[1];
     boards[1].validator.otherBoard = boards[0];
+}
+
+function fixPrototypes() {
+    boards[0].validator.__proto__ = ChessValidator.prototype;
+    boards[1].validator.__proto__ = ChessValidator.prototype;
+    boards[0].validator.timers[WHITE].__proto__ = Timer.prototype;
+    boards[0].validator.timers[BLACK].__proto__ = Timer.prototype;
+    boards[1].validator.timers[WHITE].__proto__ = Timer.prototype;
+    boards[1].validator.timers[BLACK].__proto__ = Timer.prototype;
 }
 
 var boards, socket;
@@ -388,13 +415,12 @@ $(document).ready(function() {
         boards[0].validator = validators[0];
         boards[1].validator = validators[1];
         makeLinks();
+
         // Preserve prototypes; sort of hacky
-        boards[0].validator.__proto__ = ChessValidator.prototype;
-        boards[1].validator.__proto__ = ChessValidator.prototype;
+        fixPrototypes();
+
         // Display on front-end
         boards[0].getBoardFromValidator();
         boards[1].getBoardFromValidator();
-        boards[0].startTimer();
-        boards[1].startTimer();
     });
 });
