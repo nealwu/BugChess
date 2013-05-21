@@ -845,18 +845,6 @@ ChessValidator.prototype.undoMove = function(previousBoard) {
 }
 
 ChessValidator.prototype.makeMove = function(move) {
-    var now = (new Date()).valueOf();
-
-    if (this.firstMove) {
-        this.firstMove = false;
-        this.timers[this.turn].startTime = now;
-
-        if (this.otherValidator) {
-            this.otherValidator.firstMove = false;
-            this.otherValidator.timers[this.otherValidator.turn].startTime = now;
-        }
-    }
-
     if (this.isLegalMove(move)) {
         var squares = this.fromAndToSquares(move);
         var from = squares[0], to = squares[1];
@@ -899,7 +887,20 @@ ChessValidator.prototype.makeMove = function(move) {
         // Update hasMoved
         this.getPieceAtSquare(from).hasMoved = this.getPieceAtSquare(to).hasMoved = true;
         this.lastMove = move;
+
+        // Update timers
+        var now = (new Date()).valueOf();
         this.timers[this.turn].startTime = now;
+
+        if (this.firstMove) {
+            this.firstMove = false;
+
+            // Start the timer on the other board
+            if (this.otherValidator) {
+                this.otherValidator.firstMove = false;
+                this.otherValidator.timers[this.otherValidator.turn].startTime = now;
+            }
+        }
         return true;
     }
 
