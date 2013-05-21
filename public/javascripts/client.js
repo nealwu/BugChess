@@ -66,6 +66,10 @@ DisplayTimer.prototype.getFromTimer = function(timer) {
 DisplayTimer.prototype.updateTime = function() {
     Timer.prototype.updateTime.call(this);
     this.display();
+
+    if (this.outOfTime()) {
+        stopTimers();
+    }
 }
 
 // Class for chess boards. number is the index of the board (0 or 1).
@@ -395,6 +399,11 @@ function fixPrototypes() {
 function displayBoards() {
     boards[0].getBoardFromValidator();
     boards[1].getBoardFromValidator();
+}
+
+function stopTimers() {
+    clearInterval(boards[0].timerInterval);
+    clearInterval(boards[1].timerInterval);
 }
 
 var boards, socket;
