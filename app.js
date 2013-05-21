@@ -1,3 +1,6 @@
+PORT = 8000;
+ROOM = 'room';
+
 var express = require('express'),
     app     = express(),
     server  = require('http').createServer(app),
@@ -10,7 +13,7 @@ var validators = [new ChessValidator(), new ChessValidator()];
 makeLinks();
 
 app.configure(function() {
-    app.set('port', process.env.PORT || 8000);
+    app.set('port', process.env.PORT || PORT);
     app.set('views', __dirname + '/views');
     // app.set('view engine', 'jade');
     app.use(express.favicon());
@@ -33,8 +36,6 @@ app.get('/', function(req, res) {
 });
 
 server.listen(app.get('port'));
-
-ROOM = 'room';
 
 function makeLinks() {
     validators[0].otherValidator = validators[1];
@@ -60,7 +61,7 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('make_move', function(move) {
         console.log('ID: ' + socket.id);
-        if (move === undefined) {
+        if (!move) {
             console.log('No move received!');
             return false;
         }

@@ -38,8 +38,6 @@ function assert(result, description) {
 function DisplayTimer(initial, id) {
     Timer.call(this, initial);
     this.id = id;
-    this.startTime = (new Date()).valueOf();
-    this.display();
 }
 
 DisplayTimer.prototype = new Timer();
@@ -49,19 +47,20 @@ DisplayTimer.INITIAL_MINUTES = Timer.INITIAL_MINUTES;
 DisplayTimer.INITIAL_MILLISECONDS = Timer.INITIAL_MILLISECONDS;
 DisplayTimer.INTERVAL = 100;
 
-DisplayTimer.prototype.getFromTimer = function(timer) {
-    this.minutes = timer.minutes;
-    this.seconds = timer.seconds;
-    this.milliseconds = timer.milliseconds;
-    this.startTime = timer.startTime;
-}
-
 DisplayTimer.prototype.display = function() {
     $('#' + this.id).html(this.toString());
 
     if (this.outOfTime()) {
         $('#' + this.id).css('color', 'red');
     }
+}
+
+DisplayTimer.prototype.getFromTimer = function(timer) {
+    this.minutes = timer.minutes;
+    this.seconds = timer.seconds;
+    this.milliseconds = timer.milliseconds;
+    this.startTime = timer.startTime;
+    this.display();
 }
 
 DisplayTimer.prototype.updateTime = function() {
@@ -182,7 +181,6 @@ ChessBoard.prototype.startTimer = function(startTime) {
         clearInterval(this.timerInterval);
     }
 
-    this.timers[this.validator.turn].startTime = startTime || (new Date()).valueOf();
     var self = this;
 
     this.timerInterval = setInterval(function() {
@@ -224,8 +222,6 @@ ChessBoard.prototype.getBoardFromValidator = function() {
         if (self.validator.turn == player && !self.validator.firstMove) {
             self.timers[player].updateTime();
         }
-
-        self.timers[player].display();
     });
 
     if (!this.validator.firstMove) {
@@ -270,7 +266,6 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     }
 
     this.validator.makeMove(move);
-    this.startTimer();
 
     // Send the move to the server
     if (emit) {
@@ -322,7 +317,7 @@ ChessBoard.pieceEnd = function(event) {
         this.paper.chessBoard.makeMove(move, true);
     } else {
         // Put back in place
-        console.log('Illegal move');
+        console.log('Illegal move!');
         this.attr('x', this.data('originalX'));
         this.attr('y', this.data('originalY'));
     }
@@ -374,7 +369,7 @@ ChessBoard.bankEnd = function(event) {
         chessBoard.makeMove(move, true);
     } else {
         // Put back in place
-        console.log('Illegal move');
+        console.log('Illegal move!');
     }
 
     this.remove();
@@ -388,12 +383,18 @@ function makeLinks() {
 }
 
 function fixPrototypes() {
+    // Preserve prototypes; sort of hacky
     boards[0].validator.__proto__ = ChessValidator.prototype;
     boards[1].validator.__proto__ = ChessValidator.prototype;
     boards[0].validator.timers[WHITE].__proto__ = Timer.prototype;
     boards[0].validator.timers[BLACK].__proto__ = Timer.prototype;
     boards[1].validator.timers[WHITE].__proto__ = Timer.prototype;
     boards[1].validator.timers[BLACK].__proto__ = Timer.prototype;
+}
+
+function displayBoards() {
+    boards[0].getBoardFromValidator();
+    boards[1].getBoardFromValidator();
 }
 
 var boards, socket;
@@ -409,18 +410,14 @@ $(document).ready(function() {
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
     makeLinks();
+    displayBoards();
     socket.emit('request_update');
 
     socket.on('update', function(validators) {
         boards[0].validator = validators[0];
         boards[1].validator = validators[1];
         makeLinks();
-
-        // Preserve prototypes; sort of hacky
         fixPrototypes();
-
-        // Display on front-end
-        boards[0].getBoardFromValidator();
-        boards[1].getBoardFromValidator();
+        displayBoards();
     });
 });
