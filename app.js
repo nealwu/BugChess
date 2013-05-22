@@ -1,13 +1,16 @@
 PORT = 8000;
 ROOM = 'room';
+GAME_ID = 1;
 
 var express = require('express'),
     app     = express(),
     server  = require('http').createServer(app),
     io      = require('socket.io').listen(server),
-    path    = require('path');
+    path    = require('path'),
+    db      = require('mongojs').connect('bughouse', ['games', 'users']);
 
-var ChessValidator = require('./public/javascripts/ChessValidator');
+var ChessValidatorJS = require('./public/javascripts/ChessValidator');
+var ChessValidator = ChessValidatorJS.ChessValidator, fixPrototypes = ChessValidatorJS.fixPrototypes;
 
 var validators = [new ChessValidator(), new ChessValidator()];
 makeLinks();
@@ -52,6 +55,22 @@ function sendUpdate() {
     makeLinks();
 }
 
+// If there's a game, try to load it
+db.games.find({gameID: GAME_ID}, function(error, docs) {
+    if (docs.length > 0) {
+        console.log('Found game in DB! Loading...');
+        validators = JSON.parse(docs[0].game);
+        fixPrototypes(validators[0]);
+        fixPrototypes(validators[1]);
+        makeLinks();
+    } else {
+        console.log('Game not found in DB! Creating new game...');
+        killLinks();
+        db.games.save({gameID: GAME_ID, game: JSON.stringify(validators)});
+        makeLinks();
+    }
+})
+
 io.sockets.on('connection', function(socket) {
     socket.join(ROOM);
 
@@ -61,6 +80,7 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('make_move', function(move) {
         console.log('ID: ' + socket.id);
+
         if (!move) {
             console.log('No move received!');
             return false;
@@ -81,7 +101,14 @@ io.sockets.on('connection', function(socket) {
         }
 
         console.log('Legal move!');
+        killLinks();
+        db.games.update({gameID: GAME_ID}, {$set: {game: JSON.stringify(validators)}});
+        makeLinks();
         sendUpdate();
         return true;
     });
+
+    socket.on('game_over', function() {
+
+    })
 });

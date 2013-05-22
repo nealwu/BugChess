@@ -867,10 +867,6 @@ ChessValidator.prototype.makeMove = function(move) {
                 var player = name[0];
                 var originalPiece = chessPiece.originalPiece;
                 this.otherValidator.bank[player][originalPiece]++;
-
-                if (this.otherBoard !== undefined) {
-                    this.otherBoard.getBoardFromValidator();
-                }
             }
         }
 
@@ -907,7 +903,14 @@ ChessValidator.prototype.makeMove = function(move) {
     return false;
 }
 
-exports = ChessValidator;
+// Preserve prototypes; sort of hacky
+function fixPrototypes(validator) {
+    validator.__proto__ = ChessValidator.prototype;
+    validator.timers[WHITE].__proto__ = Timer.prototype;
+    validator.timers[BLACK].__proto__ = Timer.prototype;
+}
+
+exports = {ChessValidator: ChessValidator, fixPrototypes: fixPrototypes};
 
 // Hack: will only be true if on the server
 if (typeof module != 'undefined') {

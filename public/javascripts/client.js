@@ -68,6 +68,7 @@ DisplayTimer.prototype.updateTime = function() {
     this.display();
 
     if (this.outOfTime()) {
+        socket.emit('game_over');
         stopTimers();
     }
 }
@@ -270,6 +271,7 @@ ChessBoard.prototype.makeMove = function(move, emit) {
     }
 
     this.validator.makeMove(move);
+    displayBoards();
 
     // Send the move to the server
     if (emit) {
@@ -277,8 +279,6 @@ ChessBoard.prototype.makeMove = function(move, emit) {
         var emitMove = this.number + '_' + move;
         socket.emit('make_move', emitMove);
         console.log('Sending: ' + emitMove);
-    } else {
-        this.getBoardFromValidator();
     }
 
     return true;
@@ -382,18 +382,6 @@ ChessBoard.bankEnd = function(event) {
 function makeLinks() {
     boards[0].validator.otherValidator = boards[1].validator;
     boards[1].validator.otherValidator = boards[0].validator;
-    boards[0].validator.otherBoard = boards[1];
-    boards[1].validator.otherBoard = boards[0];
-}
-
-function fixPrototypes() {
-    // Preserve prototypes; sort of hacky
-    boards[0].validator.__proto__ = ChessValidator.prototype;
-    boards[1].validator.__proto__ = ChessValidator.prototype;
-    boards[0].validator.timers[WHITE].__proto__ = Timer.prototype;
-    boards[0].validator.timers[BLACK].__proto__ = Timer.prototype;
-    boards[1].validator.timers[WHITE].__proto__ = Timer.prototype;
-    boards[1].validator.timers[BLACK].__proto__ = Timer.prototype;
 }
 
 function displayBoards() {
@@ -426,7 +414,8 @@ $(document).ready(function() {
         boards[0].validator = validators[0];
         boards[1].validator = validators[1];
         makeLinks();
-        fixPrototypes();
+        fixPrototypes(boards[0].validator);
+        fixPrototypes(boards[1].validator);
         displayBoards();
     });
 });
