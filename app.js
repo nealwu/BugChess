@@ -1,6 +1,6 @@
 PORT = 8000;
 ROOM = 'room';
-GAME_ID = 1;
+GAME_ID = 0;
 
 var express = require('express'),
     app     = express(),
@@ -35,6 +35,14 @@ app.configure('development', function() {
 });
 
 app.get('/', function(req, res) {
+    loadGame();
+    res.sendfile(__dirname + '/views/index.html');
+});
+
+app.get('/game/:gameID', function(req, res) {
+    // TODO: make sure gameID is an integer
+    GAME_ID = parseInt(req.params.gameID);
+    loadGame();
     res.sendfile(__dirname + '/views/index.html');
 });
 
@@ -55,21 +63,23 @@ function sendUpdate() {
     makeLinks();
 }
 
-// If there's a game, try to load it
-db.games.find({gameID: GAME_ID}, function(error, docs) {
-    if (docs && docs.length > 0) {
-        console.log('Found game in DB! Loading...');
-        validators = JSON.parse(docs[0].game);
-        fixPrototypes(validators[0]);
-        fixPrototypes(validators[1]);
-        makeLinks();
-    } else {
-        console.log('Game not found in DB! Creating new game...');
-        killLinks();
-        db.games.save({gameID: GAME_ID, game: JSON.stringify(validators)});
-        makeLinks();
-    }
-})
+function loadGame() {
+    // If there's a game, try to load it
+    db.games.find({gameID: GAME_ID}, function(error, docs) {
+        if (docs && docs.length > 0) {
+            console.log('Found game in DB! Loading...');
+            validators = JSON.parse(docs[0].game);
+            fixPrototypes(validators[0]);
+            fixPrototypes(validators[1]);
+            makeLinks();
+        } else {
+            console.log('Game not found in DB! Creating new game...');
+            killLinks();
+            db.games.save({gameID: GAME_ID, game: JSON.stringify(validators)});
+            makeLinks();
+        }
+    });  
+}
 
 io.sockets.on('connection', function(socket) {
     socket.join(ROOM);
