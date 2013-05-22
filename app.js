@@ -57,7 +57,7 @@ function sendUpdate() {
 
 // If there's a game, try to load it
 db.games.find({gameID: GAME_ID}, function(error, docs) {
-    if (docs.length > 0) {
+    if (docs && docs.length > 0) {
         console.log('Found game in DB! Loading...');
         validators = JSON.parse(docs[0].game);
         fixPrototypes(validators[0]);
