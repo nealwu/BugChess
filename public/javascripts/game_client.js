@@ -28,6 +28,12 @@ EMPTY2 = EMPTY + EMPTY;
 BANK_ORDER = [QUEEN, ROOK, BISHOP, KNIGHT, PAWN];
 BANK_FONT_SIZE = 24;
 
+LIGHT_COLOR = '#f0d9b5';
+DARK_COLOR = '#b58863';
+
+FROM_COLOR = '#9cf';
+TO_COLOR = '#28d';
+
 function assert(result, description) {
     if (!result) {
         console.log(description);
@@ -133,25 +139,33 @@ ChessBoard.prototype.changeBank = function(player, piece, count) {
     this.bank[player][piece][2] = count;
 }
 
+ChessBoard.prototype.defaultSquareColors = function() {
+    for (var x = 0; x < BOARD_SIZE; x++) {
+        for (var y = 0; y < BOARD_SIZE; y++) {
+            // Choose between light brown and dark brown
+            var squareColor = (x + y) % 2 == 0 ? LIGHT_COLOR : DARK_COLOR;
+            this.boardSquares[x][y].attr('fill', squareColor);
+        }
+    }
+}
+
 ChessBoard.prototype.initBoard = function() {
     this.bottomPlayer = this.number == 0 ? WHITE : BLACK;
 
     this.raphael = Raphael('board' + this.number, BOARD_WIDTH, BOARD_HEIGHT);
     this.raphael.chessBoard = this;
 
-    // Set up the 64 squares
     this.boardSquares = [];
 
     for (var x = 0; x < BOARD_SIZE; x++) {
         this.boardSquares[x] = [];
         for (var y = 0; y < BOARD_SIZE; y++) {
-            // Choose between light brown and dark brown
-            var squareColor = (x + y) % 2 == 0 ? '#f0d9b5' : '#b58863';
             this.boardSquares[x][y] = this.raphael.rect(x * SQUARE_PIXELS, BANK_PIXELS + y * SQUARE_PIXELS, SQUARE_PIXELS, SQUARE_PIXELS)
-                .attr('fill', squareColor)
                 .attr('stroke-width', 0);
         }
     }
+
+    this.defaultSquareColors();
 
     // Place pieces
     this.pieceAtSquare = {};
@@ -221,6 +235,16 @@ ChessBoard.prototype.getBoardFromValidator = function() {
         });
     });
 
+    // Highlight most recent move
+    if (this.validator.lastMove != '') {
+        this.defaultSquareColors();
+        var squares = this.validator.fromAndToSquares(this.validator.lastMove);
+        var coords = this.squareToCoordinates(squares[0]);
+        this.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
+        coords = this.squareToCoordinates(squares[1]);
+        this.boardSquares[coords[0]][coords[1]].attr('fill', TO_COLOR);
+    }
+
     [WHITE, BLACK].forEach(function(player) {
         self.timers[player].getFromTimer(self.validator.timers[player]);
 
@@ -265,22 +289,19 @@ ChessBoard.prototype.coordinatesToSquare = function(x, y, skipAssert) {
     }
 }
 
-ChessBoard.prototype.makeMove = function(move, emit) {
+ChessBoard.prototype.makeMove = function(move) {
     if (!this.validator.isLegalMove(move)) {
         return false;
     }
 
     this.validator.makeMove(move);
+    this.lastMove = move;
     displayBoards();
 
     // Send the move to the server
-    if (emit) {
-        this.lastMove = move;
-        var emitMove = this.number + '_' + move;
-        socket.emit('make_move', emitMove);
-        console.log('Sending: ' + emitMove);
-    }
-
+    var emitMove = this.number + '_' + move;
+    socket.emit('make_move', emitMove);
+    console.log('Sent: ' + emitMove);
     return true;
 }
 
@@ -318,7 +339,7 @@ ChessBoard.pieceEnd = function(event) {
     // Check for validity
     if (ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
-        this.paper.chessBoard.makeMove(move, true);
+        this.paper.chessBoard.makeMove(move);
     } else {
         // Put back in place
         console.log('Illegal move!');
@@ -365,12 +386,11 @@ ChessBoard.bankEnd = function(event) {
     var toCoords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
     var move = player + '_' + piece + toSquare;
     console.log(move);
-    var chessBoard = this.paper.chessBoard;
 
     // Check for validity
     if (count > 0 && ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
         console.log('Legal move!');
-        chessBoard.makeMove(move, true);
+        this.paper.chessBoard.makeMove(move);
     } else {
         // Put back in place
         console.log('Illegal move!');

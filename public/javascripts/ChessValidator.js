@@ -816,8 +816,6 @@ ChessValidator.prototype.simulateMove = function(move, castleHack) {
 
 // To be used for highlighting as well
 ChessValidator.prototype.fromAndToSquares = function(move) {
-    assert(this.isLegalMove(move), 'Illegal move given to ChessValidator.fromAndToSquares: ' + move);
-
     if (move[2] == '0') {
         // Case 3: castling
         var row = move[0] == WHITE ? '1' : '8';

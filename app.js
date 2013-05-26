@@ -36,14 +36,18 @@ app.configure('development', function() {
 
 app.get('/', function(req, res) {
     loadGame();
-    res.sendfile(__dirname + '/views/index.html');
+    res.sendfile(__dirname + '/views/game.html');
 });
 
 app.get('/game/:gameID', function(req, res) {
     // TODO: make sure gameID is an integer
     GAME_ID = parseInt(req.params.gameID);
+
+    if (isNaN(GAME_ID))
+        GAME_ID = 0;
+
     loadGame();
-    res.sendfile(__dirname + '/views/index.html');
+    res.sendfile(__dirname + '/views/game.html');
 });
 
 server.listen(app.get('port'));
