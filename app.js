@@ -12,8 +12,7 @@ var express = require('express'),
 var ChessValidatorJS = require('./public/javascripts/ChessValidator');
 var ChessValidator = ChessValidatorJS.ChessValidator, fixPrototypes = ChessValidatorJS.fixPrototypes;
 
-var validators = [new ChessValidator(), new ChessValidator()];
-makeLinks();
+var validators = [];
 
 app.configure(function() {
     app.set('port', process.env.PORT || PORT);
@@ -43,8 +42,10 @@ app.get('/game/:gameID', function(req, res) {
     // TODO: make sure gameID is an integer
     GAME_ID = parseInt(req.params.gameID);
 
-    if (isNaN(GAME_ID))
+    if (isNaN(GAME_ID)) {
+        console.log('Invalid gameID! Setting gameID to 0...');
         GAME_ID = 0;
+    }
 
     loadGame();
     res.sendfile(__dirname + '/views/game.html');
@@ -76,11 +77,13 @@ function loadGame() {
             fixPrototypes(validators[0]);
             fixPrototypes(validators[1]);
             makeLinks();
+            sendUpdate();
         } else {
             console.log('Game not found in DB! Creating new game...');
-            killLinks();
+            validators = [new ChessValidator(), new ChessValidator()];
             db.games.save({gameID: GAME_ID, game: JSON.stringify(validators)});
             makeLinks();
+            sendUpdate();
         }
     });  
 }
