@@ -34,6 +34,7 @@ app.configure('development', function() {
 });
 
 app.get('/', function(req, res) {
+    GAME_ID = 0;
     loadGame();
     res.sendfile(__dirname + '/views/game.html');
 });
@@ -68,22 +69,39 @@ function sendUpdate() {
     makeLinks();
 }
 
+function doesGameExist(ID, callback) {
+    db.games.find({gameID: ID}, function(error, docs) {
+        callback(!error && docs && docs.length > 0);
+    });
+}
+
+function saveGame() {
+    doesGameExist(GAME_ID, function(exists) {
+        killLinks();
+
+        if (exists) {
+            db.games.update({gameID: GAME_ID}, {$set: {game: JSON.stringify(validators)}});
+        } else {
+            db.games.save({gameID: GAME_ID, game: JSON.stringify(validators)});
+        }
+
+        makeLinks();
+    });
+}
+
 function loadGame() {
     // If there's a game, try to load it
     db.games.find({gameID: GAME_ID}, function(error, docs) {
-        if (docs && docs.length > 0) {
+        if (!error && docs && docs.length > 0) {
             console.log('Found game in DB! Loading...');
             validators = JSON.parse(docs[0].game);
             fixPrototypes(validators[0]);
             fixPrototypes(validators[1]);
             makeLinks();
-            sendUpdate();
         } else {
             console.log('Game not found in DB! Creating new game...');
             validators = [new ChessValidator(), new ChessValidator()];
-            db.games.save({gameID: GAME_ID, game: JSON.stringify(validators)});
-            makeLinks();
-            sendUpdate();
+            saveGame();
         }
     });  
 }
@@ -118,9 +136,7 @@ io.sockets.on('connection', function(socket) {
         }
 
         console.log('Legal move!');
-        killLinks();
-        db.games.update({gameID: GAME_ID}, {$set: {game: JSON.stringify(validators)}});
-        makeLinks();
+        saveGame();
         sendUpdate();
         return true;
     });
