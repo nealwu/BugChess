@@ -1,6 +1,5 @@
 PORT = 8000;
 ROOM = 'room';
-GAME_ID = 0;
 
 var express = require('express'),
     app     = express(),
@@ -11,8 +10,6 @@ var express = require('express'),
 
 var ChessValidatorJS = require('./public/javascripts/ChessValidator');
 var ChessValidator = ChessValidatorJS.ChessValidator, fixPrototypes = ChessValidatorJS.fixPrototypes;
-
-var validators = [];
 
 app.configure(function() {
     app.set('port', process.env.PORT || PORT);
@@ -34,111 +31,122 @@ app.configure('development', function() {
 });
 
 app.get('/', function(req, res) {
-    GAME_ID = 0;
-    loadGame();
-    res.sendfile(__dirname + '/views/game.html');
+    res.sendfile(app.get('views') + '/game.html');
 });
 
 app.get('/game/:gameID', function(req, res) {
-    // TODO: make sure gameID is an integer
-    GAME_ID = parseInt(req.params.gameID);
-
-    if (isNaN(GAME_ID)) {
-        console.log('Invalid gameID! Setting gameID to 0...');
-        GAME_ID = 0;
-    }
-
-    loadGame();
-    res.sendfile(__dirname + '/views/game.html');
+    res.sendfile(app.get('views') + '/game.html');
 });
 
 server.listen(app.get('port'));
 
-function makeLinks() {
+function makeLinks(validators) {
     validators[0].otherValidator = validators[1];
     validators[1].otherValidator = validators[0];
 }
 
-function killLinks() {
+function killLinks(validators) {
     validators[0].otherValidator = validators[1].otherValidator = null;
 }
 
-function sendUpdate() {
-    killLinks();
-    io.sockets.in(ROOM).emit('update', validators);
-    makeLinks();
+function sendUpdate(gameID, validators) {
+    console.log('Updating game ' + gameID);
+    killLinks(validators);
+    io.sockets.in(ROOM + gameID).emit('update', validators);
+    makeLinks(validators);
 }
 
-function doesGameExist(ID, callback) {
-    db.games.find({gameID: ID}, function(error, docs) {
+function doesGameExist(gameID, callback) {
+    db.games.find({gameID: gameID}, function(error, docs) {
         callback(!error && docs && docs.length > 0);
     });
 }
 
-function saveGame() {
-    doesGameExist(GAME_ID, function(exists) {
-        killLinks();
+function saveGame(gameID, validators) {
+    doesGameExist(gameID, function(exists) {
+        killLinks(validators);
 
         if (exists) {
-            db.games.update({gameID: GAME_ID}, {$set: {game: JSON.stringify(validators)}});
+            db.games.update({gameID: gameID}, {$set: {game: JSON.stringify(validators)}});
         } else {
-            db.games.save({gameID: GAME_ID, game: JSON.stringify(validators)});
+            db.games.save({gameID: gameID, game: JSON.stringify(validators)});
         }
 
-        makeLinks();
+        makeLinks(validators);
     });
 }
 
-function loadGame() {
-    // If there's a game, try to load it
-    db.games.find({gameID: GAME_ID}, function(error, docs) {
+function loadGame(gameID, callback) {
+    db.games.find({gameID: gameID}, function(error, docs) {
+        var validators;
+
+        // If there's a game, try to load it
         if (!error && docs && docs.length > 0) {
-            console.log('Found game in DB! Loading...');
+            console.log('Found game ' + gameID + ' in DB! Loading...');
             validators = JSON.parse(docs[0].game);
             fixPrototypes(validators[0]);
             fixPrototypes(validators[1]);
-            makeLinks();
+            makeLinks(validators);
         } else {
-            console.log('Game not found in DB! Creating new game...');
+            console.log('Game ' + gameID + ' not found in DB! Creating new game...');
             validators = [new ChessValidator(), new ChessValidator()];
-            saveGame();
+            saveGame(gameID, validators);
         }
-    });  
+
+        callback(validators);
+    });
 }
 
-io.sockets.on('connection', function(socket) {
-    socket.join(ROOM);
+var socket_to_game = {};
 
-    socket.on('request_update', function() {
-        sendUpdate();
+io.sockets.on('connection', function(socket) {
+    socket.on('start', function(URL) {
+        var slash = URL.lastIndexOf('/');
+        var gameID = parseInt(URL.substring(slash + 1));
+
+        if (isNaN(gameID)) {
+            console.log('Invalid gameID in URL! Setting to 0...');
+            gameID = 0;
+        }
+
+        console.log('This is ' + this.id);
+        socket_to_game[this.id] = gameID;
+        this.join(ROOM + gameID);
+
+        loadGame(gameID, function(validators) {
+            sendUpdate(gameID, validators);
+        });
     });
 
     socket.on('make_move', function(move) {
-        console.log('ID: ' + socket.id);
+        console.log('ID: ' + this.id);
+        var gameID = socket_to_game[this.id];
+        console.log('Make move in game ' + gameID);
 
-        if (!move) {
-            console.log('No move received!');
-            return false;
-        }
+        loadGame(gameID, function(validators) {
+            if (!move) {
+                console.log('No move received!');
+                return;
+            }
 
-        console.log('Server received: ' + move);
-        var number = parseInt(move[0]);
-        move = move.substring(2, move.length);
+            console.log('Server received: ' + move);
+            var number = parseInt(move[0]);
+            move = move.substring(2, move.length);
 
-        if (number != 0 && number != 1) {
-            console.log('Illegal move!');
-            return false;
-        }
+            if (number != 0 && number != 1) {
+                console.log('Illegal move!');
+                return;
+            }
 
-        if (!validators[number].makeMove(move)) {
-            console.log('Illegal move!');
-            return false;
-        }
+            if (!validators[number].makeMove(move)) {
+                console.log('Illegal move!');
+                return;
+            }
 
-        console.log('Legal move!');
-        saveGame();
-        sendUpdate();
-        return true;
+            console.log('Legal move!');
+            saveGame(gameID, validators);
+            sendUpdate(gameID, validators);
+        });
     });
 
     socket.on('game_over', function() {
