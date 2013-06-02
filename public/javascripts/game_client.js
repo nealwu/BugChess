@@ -319,6 +319,11 @@ ChessBoard.prototype.pixelsToSquare = function(x, y) {
 ChessBoard.pieceStart = function(x, y, event) {
     this.data('originalX', this.attr('x'));
     this.data('originalY', this.attr('y'));
+
+    var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
+    var coords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
+    this.paper.chessBoard.defaultSquareColors();
+    this.paper.chessBoard.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
 }
 
 ChessBoard.pieceMove = function(dx, dy, x, y, event) {
@@ -345,6 +350,7 @@ ChessBoard.pieceEnd = function(event) {
         console.log('Illegal move!');
         this.attr('x', this.data('originalX'));
         this.attr('y', this.data('originalY'));
+        this.paper.chessBoard.getBoardFromValidator();
     }
 }
 
