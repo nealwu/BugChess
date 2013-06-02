@@ -235,9 +235,10 @@ ChessBoard.prototype.getBoardFromValidator = function() {
         });
     });
 
+    this.defaultSquareColors();
+
     // Highlight most recent move
     if (this.validator.lastMove != '') {
-        this.defaultSquareColors();
         var squares = this.validator.fromAndToSquares(this.validator.lastMove);
         var coords = this.squareToCoordinates(squares[0]);
         this.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
