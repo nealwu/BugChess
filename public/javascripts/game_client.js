@@ -428,7 +428,7 @@ $(document).ready(function() {
     boards = [new ChessBoard(0), new ChessBoard(1)];
     makeLinks();
     displayBoards();
-    socket.emit('start', document.URL);
+    socket.emit('start_game', document.URL);
 
     socket.on('update', function(validators) {
         boards[0].validator = validators[0];

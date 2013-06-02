@@ -31,7 +31,7 @@ app.configure('development', function() {
 });
 
 app.get('/', function(req, res) {
-    res.sendfile(app.get('views') + '/game.html');
+    res.sendfile(app.get('views') + '/index.html');
 });
 
 app.get('/game/:gameID', function(req, res) {
@@ -100,7 +100,7 @@ function loadGame(gameID, callback) {
 var socket_to_game = {};
 
 io.sockets.on('connection', function(socket) {
-    socket.on('start', function(URL) {
+    socket.on('start_game', function(URL) {
         var slash = URL.lastIndexOf('/');
         var gameID = parseInt(URL.substring(slash + 1));
 
@@ -151,5 +151,13 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('game_over', function() {
 
-    })
+    });
+
+    socket.on('get_games', function() {
+        db.games.find(function(error, docs) {
+            if (!error && docs) {
+                socket.emit('games', docs);
+            }
+        });
+    });
 });
