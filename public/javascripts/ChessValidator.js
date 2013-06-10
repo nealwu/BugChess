@@ -499,7 +499,7 @@ ChessValidator.prototype.checkForCastle = function(move) {
  * TODO: check for invalid move notation (sent by client, so can't be trusted)
  * TODO: pawns can only move diagonally when capturing; also check en passant
  */
-ChessValidator.prototype.isLegalMove = function(move) {
+ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
     move = this.checkForCastle(move);
 
     // Can't move on your opponent's turn.
@@ -507,7 +507,7 @@ ChessValidator.prototype.isLegalMove = function(move) {
         return false;
     }
 
-    if (!this.firstMove) {
+    if (!this.firstMove && !skipTimeCheck) {
         this.timers[this.turn].updateTime();
 
         // Illegal if out of time
@@ -727,7 +727,7 @@ ChessValidator.prototype.isLegalMove = function(move) {
     return legal;
 }
 
-ChessValidator.prototype.legalMoves = function(skipBank) {
+ChessValidator.prototype.legalMoves = function(checkmate) {
     // getAttackingSquares for everything, and also move forward once + twice for pawns
     // Then check isLegalMove, add to set
     // Also dropping pieces
@@ -747,7 +747,7 @@ ChessValidator.prototype.legalMoves = function(skipBank) {
                     var attackSquare = this.coordinatesToSquare(coords[0], coords[1]);
                     var move = player + '_' + square + '-' + attackSquare;
 
-                    if (this.isLegalMove(move)) {
+                    if (this.isLegalMove(move, checkmate)) {
                         moves.push(move);
                     }
                 }
@@ -759,11 +759,11 @@ ChessValidator.prototype.legalMoves = function(skipBank) {
                     var move1 = player + '_' + square + '-' + square1;
                     var move2 = player + '_' + square + '-' + square2;
 
-                    if (this.isLegalMove(move1)) {
+                    if (this.isLegalMove(move1, checkmate)) {
                         moves.push(move1);
                     }
 
-                    if (this.isLegalMove(move2)) {
+                    if (this.isLegalMove(move2, checkmate)) {
                         moves.push(move2);
                     }
                 }
@@ -773,15 +773,15 @@ ChessValidator.prototype.legalMoves = function(skipBank) {
                 var piece = BANK_PIECES[i];
                 var move = player + '_' + piece + square;
 
-                if (skipBank) {
+                if (checkmate) {
                     this.bank[player][piece]++;
                 }
 
-                if (this.isLegalMove(move)) {
+                if (this.isLegalMove(move, checkmate)) {
                     moves.push(move);
                 }
 
-                if (skipBank) {
+                if (checkmate) {
                     this.bank[player][piece]--;
                 }
             }
@@ -791,11 +791,11 @@ ChessValidator.prototype.legalMoves = function(skipBank) {
     var move1 = player + '_0-0';
     var move2 = player + '_0-0-0';
 
-    if (this.isLegalMove(move1)) {
+    if (this.isLegalMove(move1, checkmate)) {
         moves.push(move1);
     }
 
-    if (this.isLegalMove(move2)) {
+    if (this.isLegalMove(move2, checkmate)) {
         moves.push(move2);
     }
 
