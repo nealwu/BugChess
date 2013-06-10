@@ -414,6 +414,14 @@ function makeLinks() {
 function displayBoards() {
     boards[0].getBoardFromValidator();
     boards[1].getBoardFromValidator();
+
+    if (boards[0].validator.isCheckmate()) {
+        alert('Checkmate on left board!');
+    }
+
+    if (boards[1].validator.isCheckmate()) {
+        alert('Checkmate on right board!');
+    }
 }
 
 function stopTimers() {
@@ -434,7 +442,6 @@ $(document).ready(function() {
     // Create two boards AFTER the socket is connected
     boards = [new ChessBoard(0), new ChessBoard(1)];
     makeLinks();
-    displayBoards();
     socket.emit('start_game', document.URL);
 
     socket.on('update', function(validators) {

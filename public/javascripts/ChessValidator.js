@@ -12,6 +12,8 @@ KING = 'K';
 EMPTY = '.';
 EMPTY2 = EMPTY + EMPTY;
 
+BANK_PIECES = [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING];
+
 STARTING_BOARD = {
     'a1': WHITE + ROOK,
     'b1': WHITE + KNIGHT,
@@ -695,7 +697,11 @@ ChessValidator.prototype.isLegalMove = function(move) {
         }
 
         var piece = move[2];
-        assert(ChessValidator.isValidPiece(piece), 'Invalid piece in ChessValidator.isLegalMove: ' + piece);
+
+        if (!ChessValidator.isValidPiece(piece) || piece == KING) {
+            return false;
+        }
+
         var bankCount = this.bank[this.turn][piece];
 
         if (bankCount === undefined || bankCount <= 0) {
@@ -721,11 +727,83 @@ ChessValidator.prototype.isLegalMove = function(move) {
     return legal;
 }
 
-ChessValidator.prototype.legalMoves = function(x, y) {
-// getAttackingSquares for everything, and also move forward once + twice for pawns
-// Then check isLegalMove, add to set
-// Also dropping pieces
-// Also two potential castling moves
+ChessValidator.prototype.legalMoves = function(skipBank) {
+    // getAttackingSquares for everything, and also move forward once + twice for pawns
+    // Then check isLegalMove, add to set
+    // Also dropping pieces
+    // Also two potential castling moves
+    var player = this.turn;
+    var moves = [];
+
+    for (var x = 0; x < BOARD_SIZE; x++) {
+        for (var y = 0; y < BOARD_SIZE; y++) {
+            var square = this.coordinatesToSquare(x, y);
+            var name = this.getPieceAt(x, y).name;
+            var attacks = this.getAttackingSquares(x, y);
+
+            if (name[0] == player) {
+                for (var i in attacks) {
+                    var coords = attacks[i];
+                    var attackSquare = this.coordinatesToSquare(coords[0], coords[1]);
+                    var move = player + '_' + square + '-' + attackSquare;
+
+                    if (this.isLegalMove(move)) {
+                        moves.push(move);
+                    }
+                }
+
+                if (name[1] == PAWN) {
+                    var dy = player == WHITE ? -1 : +1;
+                    var square1 = this.coordinatesToSquare(x, y + dy);
+                    var square2 = this.coordinatesToSquare(x, y + 2 * dy);
+                    var move1 = player + '_' + square + '-' + square1;
+                    var move2 = player + '_' + square + '-' + square2;
+
+                    if (this.isLegalMove(move1)) {
+                        moves.push(move1);
+                    }
+
+                    if (this.isLegalMove(move2)) {
+                        moves.push(move2);
+                    }
+                }
+            }
+
+            for (var i in BANK_PIECES) {
+                var piece = BANK_PIECES[i];
+                var move = player + '_' + piece + square;
+
+                if (skipBank) {
+                    this.bank[player][piece]++;
+                }
+
+                if (this.isLegalMove(move)) {
+                    moves.push(move);
+                }
+
+                if (skipBank) {
+                    this.bank[player][piece]--;
+                }
+            }
+        }
+    }
+
+    var move1 = player + '_0-0';
+    var move2 = player + '_0-0-0';
+
+    if (this.isLegalMove(move1)) {
+        moves.push(move1);
+    }
+
+    if (this.isLegalMove(move2)) {
+        moves.push(move2);
+    }
+
+    return moves;
+}
+
+ChessValidator.prototype.isCheckmate = function() {
+    return this.isInCheck(this.turn) && this.legalMoves(true).length == 0;
 }
 
 ChessValidator.prototype.isEnPassant = function(move) {
