@@ -759,11 +759,11 @@ ChessValidator.prototype.legalMoves = function(checkmate) {
                     var move1 = player + '_' + square + '-' + square1;
                     var move2 = player + '_' + square + '-' + square2;
 
-                    if (this.isLegalMove(move1, checkmate)) {
+                    if (ChessValidator.isValidSquare(square1) && this.isLegalMove(move1, checkmate)) {
                         moves.push(move1);
                     }
 
-                    if (this.isLegalMove(move2, checkmate)) {
+                    if (ChessValidator.isValidSquare(square2) && this.isLegalMove(move2, checkmate)) {
                         moves.push(move2);
                     }
                 }
