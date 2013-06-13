@@ -88,10 +88,16 @@ function ChessBoard(number) {
 ChessBoard.prototype.placePiece = function(name, square) {
     assert(ChessValidator.isValidName(name), 'Invalid name given to ChessBoard.placePiece: ' + name);
     assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.placePiece: ' + square);
+
+    if (this.pieceAtSquare[square]) {
+        this.pieceAtSquare[square].remove();
+    }
+
     var coords = this.squareToCoordinates(square);
     var piece = this.raphael.image('/images/pieces/' + name + '.svg',
         coords[0] * SQUARE_PIXELS + PIECE_OFFSET, BANK_PIXELS + coords[1] * SQUARE_PIXELS + PIECE_OFFSET, PIECE_PIXELS, PIECE_PIXELS);
     piece.data('name', name);
+    piece.data('square', square);
     piece.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
     this.pieceAtSquare[square] = piece;
     return piece;
@@ -214,7 +220,6 @@ ChessBoard.prototype.getBoardFromValidator = function() {
     ChessValidator.allSquares().forEach(function(square) {
         var piece = self.pieceAtSquare[square];
         var name = piece ? piece.data('name') : EMPTY2;
-
         var validatorName = self.validator.getPieceAtSquare(square).name;
 
         if (name != validatorName) {
@@ -306,6 +311,17 @@ ChessBoard.prototype.makeMove = function(move) {
     return true;
 }
 
+ChessBoard.prototype.coordinatesToPixels = function(x, y) {
+    assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessBoard.coordinatesToPixels: ' + x + ', ' + y);
+    return [x * SQUARE_PIXELS, y * SQUARE_PIXELS + BANK_PIXELS];
+}
+
+ChessBoard.prototype.squareToPixels = function(square) {
+    assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.squareToPixels: ' + square);
+    var coords = this.squareToCoordinates(square);
+    return this.coordinatesToPixels(coords[0], coords[1]);
+}
+
 ChessBoard.prototype.pixelsToCoordinates = function(x, y) {
     var squareX = Math.floor(x / SQUARE_PIXELS);
     var squareY = Math.floor((y - BANK_PIXELS) / SQUARE_PIXELS);
@@ -337,7 +353,7 @@ ChessBoard.pieceEnd = function(event) {
     var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
     var toSquare = this.paper.chessBoard.pixelsToSquare(centerX, centerY);
     var toCoords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
-    var fromSquare = this.paper.chessBoard.pixelsToSquare(this.data('originalX'), this.data('originalY'));
+    var fromSquare = this.data('square');
     var player = this.data('name')[0];
     var move = player + '_' + fromSquare + '-' + toSquare;
     console.log(move);
@@ -349,8 +365,9 @@ ChessBoard.pieceEnd = function(event) {
     } else {
         // Put back in place
         console.log('Illegal move!');
-        this.attr('x', this.data('originalX'));
-        this.attr('y', this.data('originalY'));
+        var pixelCoords = this.paper.chessBoard.squareToPixels(this.data('square'));
+        this.attr('x', pixelCoords[0]);
+        this.attr('y', pixelCoords[1]);
         this.paper.chessBoard.getBoardFromValidator();
     }
 }
@@ -415,13 +432,16 @@ function displayBoards() {
     boards[0].getBoardFromValidator();
     boards[1].getBoardFromValidator();
 
-    if (boards[0].validator.isCheckmate()) {
-        alert('Checkmate on left board!');
-    }
+    // Hack; raphael's image function doesn't have callback
+    setTimeout(function() {
+        if (boards[0].validator.isCheckmate()) {
+            alert('Checkmate on left board!');
+        }
 
-    if (boards[1].validator.isCheckmate()) {
-        alert('Checkmate on right board!');
-    }
+        if (boards[1].validator.isCheckmate()) {
+            alert('Checkmate on right board!');
+        }
+    });
 }
 
 function stopTimers() {
@@ -429,7 +449,7 @@ function stopTimers() {
     clearInterval(boards[1].timerInterval);
 }
 
-var boards, socket;
+var socket, boards = [];
 
 $(document).ready(function() {
     // Set up socket.io
@@ -439,17 +459,19 @@ $(document).ready(function() {
         socket = io.connect('http://localhost:8000');
     }
 
-    // Create two boards AFTER the socket is connected
-    boards = [new ChessBoard(0), new ChessBoard(1)];
-    makeLinks();
-    socket.emit('start_game', document.URL);
-
     socket.on('update', function(validators) {
+        if (boards.length == 0) {
+            // Create two boards AFTER the socket is connected
+            boards = [new ChessBoard(0), new ChessBoard(1)];
+        }
+
         boards[0].validator = validators[0];
         boards[1].validator = validators[1];
-        makeLinks();
         fixPrototypes(boards[0].validator);
         fixPrototypes(boards[1].validator);
+        makeLinks();
         displayBoards();
     });
+
+    socket.emit('start_game', document.URL);
 });

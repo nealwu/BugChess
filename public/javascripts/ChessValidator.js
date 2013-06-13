@@ -64,7 +64,7 @@ function deepCopy(array) {
     var jqueryCopy = $.extend(true, {}, array);
     var newArray = [];
 
-    for (i in jqueryCopy) {
+    for (var i in jqueryCopy) {
         newArray.push(jqueryCopy[i]);
     }
 
@@ -76,7 +76,7 @@ function arraysEqual(a, b) {
         return false;
     }
 
-    for (i in a) {
+    for (var i in a) {
         if (a[i] != b[i]) {
             return false;
         }
@@ -86,7 +86,7 @@ function arraysEqual(a, b) {
 }
 
 function arrayContains(array, elem) {
-    for (i in array) {
+    for (var i in array) {
         if (array[i] == elem || arraysEqual(array[i], elem)) {
             return true;
         }
@@ -332,7 +332,7 @@ ChessValidator.prototype.getKnightAttackingSquares = function(x, y) {
     var dx = [-2, -2, -1, -1, +1, +1, +2, +2];
     var dy = [-1, +1, -2, +2, -2, +2, -1, +1];
 
-    for (i in dx) {
+    for (var i in dx) {
         var nx = x + dx[i], ny = y + dy[i];
 
         if (ChessValidator.areValidCoordinates(nx, ny)) {
@@ -376,7 +376,7 @@ ChessValidator.prototype.getRookAttackingSquares = function(x, y) {
     var dx = [-1, +1, 0, 0];
     var dy = [0, 0, -1, +1];
 
-    for (i in dx) {
+    for (var i in dx) {
         var nx = x + dx[i], ny = y + dy[i];
 
         while (ChessValidator.areValidCoordinates(nx, ny)) {
@@ -470,8 +470,10 @@ ChessValidator.prototype.isInCheck = function(player) {
 }
 
 ChessValidator.prototype.checkForCastle = function(move) {
+    var player = move[0];
+
     if (move.length >= 7) {
-        var row = move[0] == WHITE ? '1' : '8';
+        var row = player == WHITE ? '1' : '8';
         var from = move.substring(2, 4);
         var to = move.substring(5, 7);
 
@@ -500,10 +502,13 @@ ChessValidator.prototype.checkForCastle = function(move) {
  * TODO: pawns can only move diagonally when capturing; also check en passant
  */
 ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
+    var player = this.turn;
+    var other = player == WHITE ? BLACK : WHITE;
+
     move = this.checkForCastle(move);
 
     // Can't move on your opponent's turn.
-    if (move[0] != this.turn) {
+    if (move[0] != player) {
         return false;
     }
 
@@ -519,12 +524,12 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
     if (move[2] == '0') {
         // Case 3: castling
 
-        var row = move[0] == WHITE ? '1' : '8';
+        var row = player == WHITE ? '1' : '8';
 
         if (move.length == 5) {
             // Kingside castle
 
-            if (this.getPieceAtSquare('e' + row).name != move[0] + KING || this.getPieceAtSquare('h' + row).name != move[0] + ROOK) {
+            if (this.getPieceAtSquare('e' + row).name != player + KING || this.getPieceAtSquare('h' + row).name != player + ROOK) {
                 return false;
             }
 
@@ -539,30 +544,29 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
 
             // Verify no position is in check
 
-            if (this.isInCheck(move[0])) {
+            if (this.isInCheck(player)) {
                 return false;
             }
 
-            var originalBoard = this.simulateMove(move[0] + '_' + 'e' + row + '-' + 'f' + row, true);
+            var originalBoard = this.simulateMove(player + '_' + 'e' + row + '-' + 'f' + row, true);
 
-            if (this.isInCheck(move[0])) {
+            if (this.isInCheck(player)) {
                 this.undoMove(originalBoard);
                 return false;
             }
 
-            this.simulateMove(move[0] + '_' + 'f' + row + '-' + 'g' + row, true);
+            this.simulateMove(player + '_' + 'f' + row + '-' + 'g' + row, true);
 
-            if (this.isInCheck(move[0])) {
+            if (this.isInCheck(player)) {
                 this.undoMove(originalBoard);
                 return false;
             }
 
             this.undoMove(originalBoard);
-            return true;
         } else {
             // Queenside castle
 
-            if (this.getPieceAtSquare('e' + row).name != move[0] + KING || this.getPieceAtSquare('a' + row).name != move[0] + ROOK) {
+            if (this.getPieceAtSquare('e' + row).name != player + KING || this.getPieceAtSquare('a' + row).name != player + ROOK) {
                 return false;
             }
 
@@ -577,26 +581,25 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
 
             // Verify no position is in check
 
-            if (this.isInCheck(move[0])) {
+            if (this.isInCheck(player)) {
                 return false;
             }
 
-            var originalBoard = this.simulateMove(move[0] + '_' + 'e' + row + '-' + 'd' + row, true);
+            var originalBoard = this.simulateMove(player + '_' + 'e' + row + '-' + 'd' + row, true);
 
-            if (this.isInCheck(move[0])) {
+            if (this.isInCheck(player)) {
                 this.undoMove(originalBoard);
                 return false;
             }
 
-            this.simulateMove(move[0] + '_' + 'd' + row + '-' + 'c' + row, true);
+            this.simulateMove(player + '_' + 'd' + row + '-' + 'c' + row, true);
 
-            if (this.isInCheck(move[0])) {
+            if (this.isInCheck(player)) {
                 this.undoMove(originalBoard);
                 return false;
             }
 
             this.undoMove(originalBoard);
-            return true;
         }
     } else if (isLowerCase(move[2])) {
         // Case 1: regular move
@@ -623,7 +626,7 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
         var toCoords = this.squareToCoordinates(to);
 
         // Starting square must have a piece of the right color
-        if (fromPiece[0] != move[0]) {
+        if (fromPiece[0] != player) {
             return false;
         }
 
@@ -637,9 +640,10 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
 
         // Check pawn moving forward specifically; everything else can just use getAttackingSquares
         if (fromPiece[1] == PAWN) {
+            var dir = player == WHITE ? -1 : +1;
+
             if (fromCoords[0] == toCoords[0]) {
                 var x = fromCoords[0], y = fromCoords[1];
-                var dir = move[0] == WHITE ? -1 : +1;
                 var dy = toCoords[1] - y;
 
                 // Can't move backwards
@@ -673,15 +677,21 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
                     return false;
                 }
 
-                // TODO: en passant
-                if (this.isEmptyAt(toCoords[0], toCoords[1])) {
+                var capture = toPiece[0] == other;
+
+                // en passant
+                if (!capture && this.isEmptyAt(toCoords[0], toCoords[1]) && ChessValidator.areValidCoordinates(toCoords[0], toCoords[1] + dir)) {
                     // Use the y-coordinate of the from to get the en passant pawn
-                    var dir = move[0] == WHITE ? -1 : +1;
                     var passant = this.getPieceAt(toCoords[0], fromCoords[1]).name;
                     var passantFromSquare = this.coordinatesToSquare(toCoords[0], toCoords[1] + dir);
                     var passantToSquare = this.coordinatesToSquare(toCoords[0], fromCoords[1]);
-                    var passantMove = (move[0] == WHITE ? BLACK : WHITE) + '_' + passantFromSquare + '-' + passantToSquare;
-                    return passant[1] == PAWN && this.lastMove == passantMove;
+                    console.log(passantFromSquare + ' ' + passantToSquare);
+                    var passantMove = (player == WHITE ? BLACK : WHITE) + '_' + passantFromSquare + '-' + passantToSquare;
+                    capture = passant[1] == PAWN && this.lastMove == passantMove;
+                }
+
+                if (!capture) {
+                    return false;
                 }
             }
         } else {
@@ -722,7 +732,7 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
 
     // Must not end up in check
     var previousBoard = this.simulateMove(move, true);
-    var legal = !this.isInCheck(move[0]);
+    var legal = !this.isInCheck(player);
     this.undoMove(previousBoard);
     return legal;
 }
@@ -754,17 +764,23 @@ ChessValidator.prototype.legalMoves = function(checkmate) {
 
                 if (name[1] == PAWN) {
                     var dy = player == WHITE ? -1 : +1;
-                    var square1 = this.coordinatesToSquare(x, y + dy);
-                    var square2 = this.coordinatesToSquare(x, y + 2 * dy);
-                    var move1 = player + '_' + square + '-' + square1;
-                    var move2 = player + '_' + square + '-' + square2;
 
-                    if (ChessValidator.isValidSquare(square1) && this.isLegalMove(move1, checkmate)) {
-                        moves.push(move1);
+                    if (ChessValidator.areValidCoordinates(x, y + dy)) {
+                        var square1 = this.coordinatesToSquare(x, y + dy);
+                        var move1 = player + '_' + square + '-' + square1;
+
+                        if (this.isLegalMove(move1, checkmate)) {
+                            moves.push(move1);
+                        }
                     }
 
-                    if (ChessValidator.isValidSquare(square2) && this.isLegalMove(move2, checkmate)) {
-                        moves.push(move2);
+                    if (ChessValidator.areValidCoordinates(x, y + 2 * dy)) {
+                        var square2 = this.coordinatesToSquare(x, y + 2 * dy);
+                        var move2 = player + '_' + square + '-' + square2;
+
+                        if (this.isLegalMove(move2, checkmate)) {
+                            moves.push(move2);
+                        }
                     }
                 }
             }
@@ -827,6 +843,8 @@ ChessValidator.prototype.isEnPassant = function(move) {
 
 // TODO: simulateMove should return a list of what was captured
 ChessValidator.prototype.simulateMove = function(move, castleHack) {
+    var player = move[0];
+
     if (castleHack === undefined || !castleHack) {
         move = this.checkForCastle(move);
 
@@ -839,15 +857,15 @@ ChessValidator.prototype.simulateMove = function(move, castleHack) {
 
     if (move[2] == '0') {
         // Case 3: castling
-        var row = move[0] == WHITE ? '1' : '8';
+        var row = player == WHITE ? '1' : '8';
 
         if (move.length == 5) {
             // Hack: move the king to g1 / g8 and move the rook to f1 / f8
-            this.simulateMove(move[0] + '_e' + row + '-g' + row, true);
-            this.simulateMove(move[0] + '_h' + row + '-f' + row, true);
+            this.simulateMove(player + '_e' + row + '-g' + row, true);
+            this.simulateMove(player + '_h' + row + '-f' + row, true);
         } else {
-            this.simulateMove(move[0] + '_e' + row + '-c' + row, true);
-            this.simulateMove(move[0] + '_a' + row + '-d' + row, true);
+            this.simulateMove(player + '_e' + row + '-c' + row, true);
+            this.simulateMove(player + '_a' + row + '-d' + row, true);
         }
     } else if (isLowerCase(move[2])) {
         // Case 1: regular move
@@ -872,14 +890,14 @@ ChessValidator.prototype.simulateMove = function(move, castleHack) {
         // Pawn promotion (automatic queen for now)
         // TODO: enable underpromotion
         if (this.getPieceAtSquare(to).name[1] == PAWN) {
-            if ((move[0] == WHITE && toCoords[1] == 0) || (move[0] == BLACK && toCoords[1] == BOARD_SIZE - 1)) {
-                this.setPieceAtSquare(to, move[0] + QUEEN);
+            if ((player == WHITE && toCoords[1] == 0) || (player == BLACK && toCoords[1] == BOARD_SIZE - 1)) {
+                this.setPieceAtSquare(to, player + QUEEN);
                 this.getPieceAtSquare(to).originalPiece = PAWN;
             }
         }
     } else {
         // Case 2: dropped piece
-        var name = move[0] + move[2];
+        var name = player + move[2];
         var square = move.substring(3, 5);
 
         if (!ChessValidator.isValidSquare(square)) {
@@ -894,9 +912,11 @@ ChessValidator.prototype.simulateMove = function(move, castleHack) {
 
 // To be used for highlighting as well
 ChessValidator.prototype.fromAndToSquares = function(move) {
+    var player = move[0];
+
     if (move[2] == '0') {
         // Case 3: castling
-        var row = move[0] == WHITE ? '1' : '8';
+        var row = player == WHITE ? '1' : '8';
 
         if (move.length == 5) {
             return ['e' + row, 'g' + row];
@@ -973,6 +993,7 @@ ChessValidator.prototype.makeMove = function(move) {
                 this.otherValidator.timers[this.otherValidator.turn].startTime = now;
             }
         }
+
         return true;
     }
 
