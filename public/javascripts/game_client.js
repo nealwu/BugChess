@@ -104,10 +104,10 @@ ChessBoard.prototype.placePiece = function(name, square) {
 }
 
 // placeBank actually places a new image
-ChessBoard.prototype.placeBank = function(player, bankIndex, initial) {
+ChessBoard.prototype.placeBank = function(player, bankIndex, count) {
     assert(ChessValidator.isValidPlayer(player), 'Invalid player given to ChessBoard.placeBank: ' + player);
     assert(0 <= bankIndex && bankIndex < BANK_ORDER.length, 'Invalid bankIndex given to ChessBoard.placeBank: ' + bankIndex);
-    initial = initial === undefined ? 0 : initial;
+    count = count === undefined ? 0 : count;
 
     var bankY = player == this.bottomPlayer ? BOARD_HEIGHT - BANK_PIXELS : 0;
     var piece = BANK_ORDER[bankIndex];
@@ -126,8 +126,13 @@ ChessBoard.prototype.placeBank = function(player, bankIndex, initial) {
     image.data('bankIndex', bankIndex);
     image.drag(ChessBoard.bankMove, ChessBoard.bankStart, ChessBoard.bankEnd);
 
-    var text = this.raphael.text(x + PIECE_PIXELS + BANK_HORIZ_BUFFER, y + PIECE_PIXELS / 2, ':' + initial).attr('font-size', BANK_FONT_SIZE);
-    this.bank[player][piece] = [image, text, initial];
+    var text = this.raphael.text(x + PIECE_PIXELS + BANK_HORIZ_BUFFER, y + PIECE_PIXELS / 2, ': ' + count).attr('font-size', BANK_FONT_SIZE);
+    this.bank[player][piece] = [image, text, count];
+
+    if (count > 0) {
+        text.attr('fill', 'red').attr('font-weight', 'bold');
+    }
+
     return image;
 }
 
@@ -141,8 +146,14 @@ ChessBoard.prototype.changeBank = function(player, piece, count) {
     var text = this.bank[player][piece][1];
     var textX = text.attr('x'), textY = text.attr('y');
     text.remove();
-    this.bank[player][piece][1] = this.raphael.text(textX, textY, ':' + count).attr('font-size', BANK_FONT_SIZE);
+    text = this.raphael.text(textX, textY, ': ' + count).attr('font-size', BANK_FONT_SIZE);
+    this.bank[player][piece][1] = text;
     this.bank[player][piece][2] = count;
+
+    // TODO: make this do bold instead; also learn how to reset the text of the text object without replacing the whole object
+    if (count > 0) {
+        text.attr('fill', 'red').attr('font-weight', 'bold');
+    }
 }
 
 ChessBoard.prototype.defaultSquareColors = function() {
