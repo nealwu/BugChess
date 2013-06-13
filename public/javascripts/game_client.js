@@ -310,7 +310,13 @@ ChessBoard.prototype.makeMove = function(move) {
     if (!this.validator.isLegalMove(move)) {
         return false;
     }
+/*
+    var position = move.substring(0, 3);
 
+    if (seat_to_socket[position] != socket.id) {
+        return false;
+    }
+*/
     this.validator.makeMove(move);
     this.lastMove = move;
     displayBoards();
@@ -460,7 +466,7 @@ function stopTimers() {
     clearInterval(boards[1].timerInterval);
 }
 
-var socket, boards = [];
+var socket, boards = [], seat_to_socket = {}, name = '';
 
 $(document).ready(function() {
     // Set up socket.io
@@ -485,4 +491,27 @@ $(document).ready(function() {
     });
 
     socket.emit('start_game', document.URL);
+
+    $('.sit_button').click(function(event) {
+        var position = this.id.substring(this.id.length - 3);
+
+        if (name == '') {
+            name = prompt('What is your name?');
+        }
+
+        socket.emit('sit', {position: position, name: name});
+    });
+
+    socket.on('sit', function(data) {
+        var socketID = data.socketID;
+        var position = data.position;
+        var name = data.name;
+
+        $('#sit' + position).val(name);
+        seat_to_socket[position] = socketID;
+
+        if (socketID == socket.id) {
+            $('#sit' + position).css('font-weight', 'bold');
+        }
+    });
 });

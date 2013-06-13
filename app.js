@@ -1,5 +1,5 @@
 PORT = 8000;
-ROOM = 'room';
+GAME_PREFIX = 'game';
 
 var express = require('express'),
     app     = express(),
@@ -52,7 +52,7 @@ function killLinks(validators) {
 function sendUpdate(gameID, validators) {
     console.log('Updating game ' + gameID);
     killLinks(validators);
-    io.sockets.in(ROOM + gameID).emit('update', validators);
+    io.sockets.in(GAME_PREFIX + gameID).emit('update', validators);
     makeLinks(validators);
 }
 
@@ -98,8 +98,36 @@ function loadGame(gameID, callback) {
 }
 
 var socket_to_game = {};
+var game_seat_to_socket = {};
+var game_seat_to_name = {};
+
+function socketSit(socketID, gameID, position, name) {
+    if (!game_seat_to_socket[gameID]) {
+        game_seat_to_socket[gameID] = {};
+        game_seat_to_name[gameID] = {};
+    }
+
+    // Can't sit in already taken seat
+    if (game_seat_to_socket[gameID][position]) {
+        return false;
+    }
+
+    game_seat_to_socket[gameID][position] = socketID;
+    game_seat_to_name[gameID][position] = name;
+    return true;
+}
+
+function socketPermission(socketID, gameID, position) {
+    if (!game_seat_to_socket[gameID]) {
+        return false;
+    }
+
+    console.log(game_seat_to_socket[gameID][position] + ' ' + socketID);
+    return game_seat_to_socket[gameID][position] == socketID;
+}
 
 io.sockets.on('connection', function(socket) {
+
     socket.on('start_game', function(URL) {
         var slash = URL.lastIndexOf('/');
         var gameID = parseInt(URL.substring(slash + 1));
@@ -109,23 +137,42 @@ io.sockets.on('connection', function(socket) {
             gameID = 0;
         }
 
-        console.log('This is ' + this.id);
-        socket_to_game[this.id] = gameID;
-        this.join(ROOM + gameID);
+        console.log('This is ' + socket.id);
+        socket_to_game[socket.id] = gameID;
+        socket.join(GAME_PREFIX + gameID);
 
         loadGame(gameID, function(validators) {
             sendUpdate(gameID, validators);
         });
+
+        if (game_seat_to_socket[gameID]) {
+            var seat_to_socket = game_seat_to_socket[gameID];
+            var seat_to_name = game_seat_to_name[gameID];
+
+            for (var position in seat_to_socket) {
+                var socketID = seat_to_socket[position];
+                var name = seat_to_name[position];
+                socket.emit('sit', {socketID: socketID, position: position, name: name});
+            }
+        }
     });
 
     socket.on('make_move', function(move) {
-        console.log('ID: ' + this.id);
-        var gameID = socket_to_game[this.id];
+        console.log('ID: ' + socket.id);
+        var gameID = socket_to_game[socket.id];
         console.log('Make move in game ' + gameID);
 
         loadGame(gameID, function(validators) {
             if (!move) {
                 console.log('No move received!');
+                return;
+            }
+
+            var position = move.substring(0, 3);
+
+            if (!socketPermission(socket.id, gameID, position)) {
+                console.log('This socket does not have permission to move this position');
+                sendUpdate(gameID, validators);
                 return;
             }
 
@@ -160,4 +207,16 @@ io.sockets.on('connection', function(socket) {
             }
         });
     });
+
+    socket.on('sit', function(data) {
+        var position = data.position;
+        var name = data.name;
+        var gameID = socket_to_game[socket.id];
+        console.log(name + ' (' + socket.id + ') wants to sit in position ' + position + ' in game ' + gameID);
+
+        if (socketSit(socket.id, gameID, position, name)) {
+            console.log(name + ' (' + socket.id + ') approved for position ' + position + ' in game ' + gameID);
+            io.sockets.in(GAME_PREFIX + gameID).emit('sit', {socketID: socket.id, position: position, name: name});
+        }
+    })
 });
