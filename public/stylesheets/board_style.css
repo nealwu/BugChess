@@ -28,3 +28,7 @@
 .timer1, .name0 {
     float: right;
 }
+
+.ui-slider {
+    height: 100px;
+}

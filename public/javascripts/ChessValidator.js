@@ -71,6 +71,12 @@ function deepCopy(array) {
     return newArray;
 }
 
+function deepCopyValidator(board) {
+    new_board0_validator = $.extend(true, {}, board[0].validator)
+    new_board1_validator = $.extend(true, {}, board[1].validator)
+    return [new_board0_validator, new_board1_validator]
+}
+
 function arraysEqual(a, b) {
     if (a.length != b.length) {
         return false;

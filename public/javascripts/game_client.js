@@ -466,7 +466,32 @@ function stopTimers() {
     clearInterval(boards[1].timerInterval);
 }
 
-var socket, boards = [], seat_to_socket = {}, name = '';
+
+function addAndDisplayHistory() {
+    validator_history.push(deepCopyValidator(boards));
+
+    $('#history').slider({
+        range: "min",
+        min: 1,
+        max: validator_history.length,
+        value: validator_history.length,
+        slide: function(event, ui) {
+            console.log('Slider moved to ' + ui.value);
+            // $("#amount").val("Move Number " + ui.value);
+            boards[0].validator = validator_history[ui.value - 1][0];
+            boards[1].validator = validator_history[ui.value - 1][1];
+            // validator_history[ui.value][1].validator.printBoard();
+            fixPrototypes(boards[0].validator);
+            fixPrototypes(boards[1].validator);
+            makeLinks();
+            displayBoards();
+        }
+    });
+}
+
+var socket, boards = [], seat_to_socket = {}, name = '', validator_history = [];
+
+history = []
 
 $(document).ready(function() {
     // Set up socket.io
@@ -486,6 +511,7 @@ $(document).ready(function() {
         boards[1].validator = validators[1];
         fixPrototypes(boards[0].validator);
         fixPrototypes(boards[1].validator);
+        addAndDisplayHistory();
         makeLinks();
         displayBoards();
     });
@@ -514,4 +540,5 @@ $(document).ready(function() {
             $('#sit' + position).css('font-weight', 'bold');
         }
     });
+
 });

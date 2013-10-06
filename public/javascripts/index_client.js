@@ -20,13 +20,17 @@ $(document).ready(function() {
 
     socket.on('games', function(docs) {
         reverse(docs);
-        console.log(docs);
+        var max_id = -1;
         docs.forEach(function(doc) {
             var gameID = doc.gameID;
             var link = $('<a>').attr('href', document.URL + 'game/' + gameID).html('Game ' + gameID);
             var link_div = $('<div>').append(link);
             $('#games').append(link_div);
+            max_id = Math.max(max_id, gameID);
         });
+        $('#create_games').click(function(btn) {
+            window.location.href='game/' + (max_id + 1);
+        })
     });
 
     socket.emit('get_games');
