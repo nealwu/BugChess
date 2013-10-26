@@ -12,6 +12,7 @@
     "mongojs": "*",
     "passport": "*",
     "passport-local": "*",
-    "connect-flash": "*"
+    "connect-flash": "*",
+    "ejs": "*"
   }
 }
