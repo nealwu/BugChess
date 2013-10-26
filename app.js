@@ -107,11 +107,11 @@ app.configure('development', function() {
 });
 
 app.get('/', function(req, res) {
-    res.sendfile(app.get('views') + '/index.html');
+    res.render('home');
 });
 
 app.get('/game/:gameID', function(req, res) {
-    res.sendfile(app.get('views') + '/game.html');
+    res.render('game');
 });
 
 // Simple route middleware to ensure user is authenticated.
