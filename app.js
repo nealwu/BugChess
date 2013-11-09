@@ -210,7 +210,6 @@ function loadGame(gameID, callback) {
     });
 }
 
-var socket_to_game = {};
 var game_seat_to_socket = {};
 var game_seat_to_name = {};
 
@@ -241,17 +240,13 @@ function socketPermission(socketID, gameID, position) {
 
 io.sockets.on('connection', function(socket) {
 
-    socket.on('start_game', function(URL) {
-        var slash = URL.lastIndexOf('/');
-        var gameID = parseInt(URL.substring(slash + 1));
-
+    socket.on('start_game', function(gameID) {
         if (isNaN(gameID)) {
             console.log('Invalid gameID in URL! Setting to 0...');
             gameID = 0;
         }
 
         console.log('This is ' + socket.id);
-        socket_to_game[socket.id] = gameID;
         socket.join(GAME_PREFIX + gameID);
 
         loadGame(gameID, function(validators) {
@@ -270,9 +265,8 @@ io.sockets.on('connection', function(socket) {
         }
     });
 
-    socket.on('make_move', function(move) {
+    socket.on('make_move', function(gameID, move) {
         console.log('ID: ' + socket.id);
-        var gameID = socket_to_game[socket.id];
         console.log('Make move in game ' + gameID);
 
         loadGame(gameID, function(validators) {
@@ -321,10 +315,9 @@ io.sockets.on('connection', function(socket) {
         });
     });
 
-    socket.on('sit', function(data) {
+    socket.on('sit', function(gameID, data) {
         var position = data.position;
         var name = data.name;
-        var gameID = socket_to_game[socket.id];
         console.log(name + ' (' + socket.id + ') wants to sit in position ' + position + ' in game ' + gameID);
 
         if (socketSit(socket.id, gameID, position, name)) {

@@ -323,7 +323,7 @@ ChessBoard.prototype.makeMove = function(move) {
 
     // Send the move to the server
     var emitMove = this.number + '_' + move;
-    socket.emit('make_move', emitMove);
+    socket.emit('make_move', getGameID(), emitMove);
     console.log('Sent: ' + emitMove);
     return true;
 }
@@ -466,6 +466,10 @@ function stopTimers() {
     clearInterval(boards[1].timerInterval);
 }
 
+function getGameID() {
+    return parseInt(document.URL.substring(document.URL.lastIndexOf('/') + 1));
+}
+
 var socket, boards = [], seat_to_socket = {}, name = '';
 
 $(document).ready(function() {
@@ -490,7 +494,7 @@ $(document).ready(function() {
         displayBoards();
     });
 
-    socket.emit('start_game', document.URL);
+    socket.emit('start_game', getGameID());
 
     $('.sit_button').click(function(event) {
         var position = this.id.substring(this.id.length - 3);
@@ -499,7 +503,7 @@ $(document).ready(function() {
             name = prompt('What is your name?');
         }
 
-        socket.emit('sit', {position: position, name: name});
+        socket.emit('sit', getGameID(), {position: position, name: name});
     });
 
     socket.on('sit', function(data) {
