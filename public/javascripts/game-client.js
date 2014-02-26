@@ -187,7 +187,7 @@ ChessBoard.prototype.initBoard = function() {
     // Place pieces
     this.pieceAtSquare = {};
 
-    for (square in STARTING_BOARD) {
+    for (var square in STARTING_BOARD) {
         var name = STARTING_BOARD[square];
         this.placePiece(name, square);
     }
@@ -201,7 +201,7 @@ ChessBoard.prototype.initBoard = function() {
     this.bank[WHITE] = {};
     this.bank[BLACK] = {};
 
-    for (i in BANK_ORDER) {
+    for (var i in BANK_ORDER) {
         this.placeBank(WHITE, i);
         this.placeBank(BLACK, i);
     }

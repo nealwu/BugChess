@@ -202,7 +202,7 @@ ChessValidator.prototype.initialize = function() {
         self.setPieceAtSquare(square, EMPTY2);
     });
 
-    for (square in STARTING_BOARD) {
+    for (var square in STARTING_BOARD) {
         this.setPieceAtSquare(square, STARTING_BOARD[square]);
     }
 
