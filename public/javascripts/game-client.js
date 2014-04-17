@@ -1,38 +1,41 @@
-BOARD_SIZE = 8;
+/* globals console, alert, Timer, $, ChessValidator, Raphael, STARTING_BOARD, io, fixPrototypes */
 
-if (navigator.userAgent.indexOf('iPhone') != -1 || navigator.userAgent.indexOf('iPad') != -1) {
+var BOARD_SIZE = 8;
+var SQUARE_PIXELS;
+
+if (navigator.userAgent.indexOf('iPhone') !== -1 || navigator.userAgent.indexOf('iPad') !== -1) {
     SQUARE_PIXELS = 45;
 } else {
     SQUARE_PIXELS = 60;
 }
 
-PIECE_OFFSET = 0;
-PIECE_PIXELS = SQUARE_PIXELS - 2 * PIECE_OFFSET;
-BANK_PIXELS = SQUARE_PIXELS;
-BANK_HORIZ_BUFFER = 8;
-BOARD_WIDTH = BOARD_SIZE * SQUARE_PIXELS;
-BOARD_HEIGHT = BOARD_SIZE * SQUARE_PIXELS + 2 * BANK_PIXELS;
+var PIECE_OFFSET = 0;
+var PIECE_PIXELS = SQUARE_PIXELS - 2 * PIECE_OFFSET;
+var BANK_PIXELS = SQUARE_PIXELS;
+var BANK_HORIZ_BUFFER = 8;
+var BOARD_WIDTH = BOARD_SIZE * SQUARE_PIXELS;
+var BOARD_HEIGHT = BOARD_SIZE * SQUARE_PIXELS + 2 * BANK_PIXELS;
 
-WHITE = 'W';
-BLACK = 'B';
+var WHITE = 'W';
+var BLACK = 'B';
 
-PAWN = 'P';
-KNIGHT = 'N';
-BISHOP = 'B';
-ROOK = 'R';
-QUEEN = 'Q';
-KING = 'K';
-EMPTY = '.';
-EMPTY2 = EMPTY + EMPTY;
+var PAWN = 'P';
+var KNIGHT = 'N';
+var BISHOP = 'B';
+var ROOK = 'R';
+var QUEEN = 'Q';
+var KING = 'K';
+var EMPTY = '.';
+var EMPTY2 = EMPTY + EMPTY;
 
-BANK_ORDER = [QUEEN, ROOK, BISHOP, KNIGHT, PAWN];
-BANK_FONT_SIZE = 24;
+var BANK_ORDER = [QUEEN, ROOK, BISHOP, KNIGHT, PAWN];
+var BANK_FONT_SIZE = 24;
 
-LIGHT_COLOR = '#f0d9b5';
-DARK_COLOR = '#b58863';
+var LIGHT_COLOR = '#f0d9b5';
+var DARK_COLOR = '#b58863';
 
-FROM_COLOR = '#9cf';
-TO_COLOR = '#28d';
+var FROM_COLOR = '#9cf';
+var TO_COLOR = '#28d';
 
 function assert(result, description) {
     if (!result) {
@@ -59,7 +62,7 @@ DisplayTimer.prototype.display = function() {
     if (this.outOfTime()) {
         $('#' + this.id).css('color', 'red');
     }
-}
+};
 
 DisplayTimer.prototype.getFromTimer = function(timer) {
     this.minutes = timer.minutes;
@@ -67,7 +70,7 @@ DisplayTimer.prototype.getFromTimer = function(timer) {
     this.milliseconds = timer.milliseconds;
     this.startTime = timer.startTime;
     this.display();
-}
+};
 
 DisplayTimer.prototype.updateTime = function() {
     Timer.prototype.updateTime.call(this);
@@ -77,7 +80,7 @@ DisplayTimer.prototype.updateTime = function() {
         socket.emit('game_over');
         stopTimers();
     }
-}
+};
 
 // Class for chess boards. number is the index of the board (0 or 1).
 function ChessBoard(number) {
@@ -101,7 +104,7 @@ ChessBoard.prototype.placePiece = function(name, square) {
     piece.drag(ChessBoard.pieceMove, ChessBoard.pieceStart, ChessBoard.pieceEnd);
     this.pieceAtSquare[square] = piece;
     return piece;
-}
+};
 
 // placeBank actually places a new image
 ChessBoard.prototype.placeBank = function(player, bankIndex, count) {
@@ -109,7 +112,7 @@ ChessBoard.prototype.placeBank = function(player, bankIndex, count) {
     assert(0 <= bankIndex && bankIndex < BANK_ORDER.length, 'Invalid bankIndex given to ChessBoard.placeBank: ' + bankIndex);
     count = count === undefined ? 0 : count;
 
-    var bankY = player == this.bottomPlayer ? BOARD_HEIGHT - BANK_PIXELS : 0;
+    var bankY = player === this.bottomPlayer ? BOARD_HEIGHT - BANK_PIXELS : 0;
     var piece = BANK_ORDER[bankIndex];
     var name = player + piece;
 
@@ -130,11 +133,11 @@ ChessBoard.prototype.placeBank = function(player, bankIndex, count) {
     this.bank[player][piece] = [image, text, count];
 
     if (count > 0) {
-        text.attr('fill', 'red').attr('font-weight', 'bold');
+        text.attr('fill', 'green').attr('font-weight', 'bold');
     }
 
     return image;
-}
+};
 
 // changeBank just modifies the text and number
 ChessBoard.prototype.changeBank = function(player, piece, count) {
@@ -152,24 +155,24 @@ ChessBoard.prototype.changeBank = function(player, piece, count) {
 
     // TODO: make this do bold instead; also learn how to reset the text of the text object without replacing the whole object
     if (count > 0) {
-        text.attr('fill', 'red').attr('font-weight', 'bold');
+        text.attr('fill', 'green').attr('font-weight', 'bold');
     }
-}
+};
 
 ChessBoard.prototype.defaultSquareColors = function() {
     for (var x = 0; x < BOARD_SIZE; x++) {
         for (var y = 0; y < BOARD_SIZE; y++) {
             // Choose between light brown and dark brown
-            var squareColor = (x + y) % 2 == 0 ? LIGHT_COLOR : DARK_COLOR;
+            var squareColor = (x + y) % 2 === 0 ? LIGHT_COLOR : DARK_COLOR;
             this.boardSquares[x][y].attr('fill', squareColor);
         }
     }
-}
+};
 
 ChessBoard.prototype.initBoard = function() {
-    this.bottomPlayer = this.number == 0 ? WHITE : BLACK;
+    this.bottomPlayer = this.number === 0 ? WHITE : BLACK;
 
-    this.raphael = Raphael('board' + this.number, BOARD_WIDTH, BOARD_HEIGHT);
+    this.raphael = new Raphael('board' + this.number, BOARD_WIDTH, BOARD_HEIGHT);
     this.raphael.chessBoard = this;
 
     this.boardSquares = [];
@@ -210,9 +213,9 @@ ChessBoard.prototype.initBoard = function() {
     this.timers = {};
     this.timers[WHITE] = new DisplayTimer(DisplayTimer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + WHITE);
     this.timers[BLACK] = new DisplayTimer(DisplayTimer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + BLACK);
-}
+};
 
-ChessBoard.prototype.startTimer = function(startTime) {
+ChessBoard.prototype.startTimer = function() {
     if (this.timerInterval) {
         clearInterval(this.timerInterval);
     }
@@ -222,7 +225,7 @@ ChessBoard.prototype.startTimer = function(startTime) {
     this.timerInterval = setInterval(function() {
         self.timers[self.validator.turn].updateTime();
     }, DisplayTimer.INTERVAL);
-}
+};
 
 ChessBoard.prototype.getBoardFromValidator = function() {
     var self = this;
@@ -233,13 +236,13 @@ ChessBoard.prototype.getBoardFromValidator = function() {
         var name = piece ? piece.data('name') : EMPTY2;
         var validatorName = self.validator.getPieceAtSquare(square).name;
 
-        if (name != validatorName) {
-            if (name != EMPTY2) {
+        if (name !== validatorName) {
+            if (name !== EMPTY2) {
                 piece.remove();
                 self.pieceAtSquare[square] = null;
             }
 
-            if (validatorName != EMPTY2) {
+            if (validatorName !== EMPTY2) {
                 self.placePiece(validatorName, square);
             }
         }
@@ -254,7 +257,7 @@ ChessBoard.prototype.getBoardFromValidator = function() {
     this.defaultSquareColors();
 
     // Highlight most recent move
-    if (this.validator.lastMove != '') {
+    if (this.validator.lastMove !== '') {
         var squares = this.validator.fromAndToSquares(this.validator.lastMove);
         var coords = this.squareToCoordinates(squares[0]);
         this.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
@@ -265,7 +268,7 @@ ChessBoard.prototype.getBoardFromValidator = function() {
     [WHITE, BLACK].forEach(function(player) {
         self.timers[player].getFromTimer(self.validator.timers[player]);
 
-        if (self.validator.turn == player && !self.validator.firstMove) {
+        if (self.validator.turn === player && !self.validator.firstMove) {
             self.timers[player].updateTime();
         }
     });
@@ -273,7 +276,7 @@ ChessBoard.prototype.getBoardFromValidator = function() {
     if (!this.validator.firstMove) {
         this.startTimer();
     }
-}
+};
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
 // (0, 0) = 'a8'; (7, 7) = 'h1'
@@ -286,12 +289,12 @@ ChessBoard.prototype.squareToCoordinates = function(square, skipAssert) {
     var y = '8'.charCodeAt(0) - square.charCodeAt(1);
 
     // If the bottom player is black, flip the coordinates
-    if (this.bottomPlayer == WHITE) {
+    if (this.bottomPlayer === WHITE) {
         return [x, y];
     } else {
         return [BOARD_SIZE - 1 - x, BOARD_SIZE - 1 - y];
     }
-}
+};
 
 ChessBoard.prototype.coordinatesToSquare = function(x, y, skipAssert) {
     if (!skipAssert) {
@@ -299,12 +302,12 @@ ChessBoard.prototype.coordinatesToSquare = function(x, y, skipAssert) {
     }
 
     // If the bottom player is black, flip the coordinates
-    if (this.bottomPlayer == WHITE) {
+    if (this.bottomPlayer === WHITE) {
         return String.fromCharCode(x + 'a'.charCodeAt(0), '8'.charCodeAt(0) - y);
     } else {
         return String.fromCharCode('h'.charCodeAt(0) - x, y + '1'.charCodeAt(0));
     }
-}
+};
 
 ChessBoard.prototype.makeMove = function(move) {
     if (!this.validator.isLegalMove(move)) {
@@ -313,7 +316,7 @@ ChessBoard.prototype.makeMove = function(move) {
 /*
     var position = move.substring(0, 3);
 
-    if (seat_to_socket[position] != socket.id) {
+    if (seat_to_socket[position] !== socket.id) {
         return false;
     }
 */
@@ -326,29 +329,29 @@ ChessBoard.prototype.makeMove = function(move) {
     socket.emit('make_move', getGameID(), emitMove);
     console.log('Sent: ' + emitMove);
     return true;
-}
+};
 
 ChessBoard.prototype.coordinatesToPixels = function(x, y) {
     assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessBoard.coordinatesToPixels: ' + x + ', ' + y);
     return [x * SQUARE_PIXELS, y * SQUARE_PIXELS + BANK_PIXELS];
-}
+};
 
 ChessBoard.prototype.squareToPixels = function(square) {
     assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.squareToPixels: ' + square);
     var coords = this.squareToCoordinates(square);
     return this.coordinatesToPixels(coords[0], coords[1]);
-}
+};
 
 ChessBoard.prototype.pixelsToCoordinates = function(x, y) {
     var squareX = Math.floor(x / SQUARE_PIXELS);
     var squareY = Math.floor((y - BANK_PIXELS) / SQUARE_PIXELS);
     return [squareX, squareY];
-}
+};
 
 ChessBoard.prototype.pixelsToSquare = function(x, y) {
     var coords = this.pixelsToCoordinates(x, y);
     return this.coordinatesToSquare(coords[0], coords[1], true);
-}
+};
 
 ChessBoard.pieceStart = function(x, y, event) {
     this.data('originalX', this.attr('x'));
@@ -358,12 +361,12 @@ ChessBoard.pieceStart = function(x, y, event) {
     var coords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
     this.paper.chessBoard.defaultSquareColors();
     this.paper.chessBoard.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
-}
+};
 
 ChessBoard.pieceMove = function(dx, dy, x, y, event) {
     this.attr('x', this.data('originalX') + dx);
     this.attr('y', this.data('originalY') + dy);
-}
+};
 
 ChessBoard.pieceEnd = function(event) {
     // Get the coordinates of the piece's center
@@ -387,7 +390,7 @@ ChessBoard.pieceEnd = function(event) {
         this.attr('y', pixelCoords[1]);
         this.paper.chessBoard.getBoardFromValidator();
     }
-}
+};
 
 ChessBoard.bankStart = function(x, y, event) {
     var name = this.data('name');
@@ -395,12 +398,12 @@ ChessBoard.bankStart = function(x, y, event) {
     var piece = name[1];
     var count = this.paper.chessBoard.bank[player][piece][2];
 
-    // Create a copy, even if count == 0.
+    // Create a copy, even if count === 0.
     var bankIndex = this.data('bankIndex');
     this.paper.chessBoard.placeBank(player, bankIndex, count);
     this.data('originalX', this.attr('x'));
     this.data('originalY', this.attr('y'));
-}
+};
 
 ChessBoard.bankMove = function(dx, dy, x, y, event) {
     var name = this.data('name');
@@ -408,12 +411,12 @@ ChessBoard.bankMove = function(dx, dy, x, y, event) {
     var piece = name[1];
     var count = this.paper.chessBoard.bank[player][piece][2];
 
-    // Don't let the piece move if count == 0.
+    // Don't let the piece move if count === 0.
     if (count > 0) {
         this.attr('x', this.data('originalX') + dx);
         this.attr('y', this.data('originalY') + dy);
     }
-}
+};
 
 ChessBoard.bankEnd = function(event) {
     var name = this.data('name');
@@ -438,7 +441,7 @@ ChessBoard.bankEnd = function(event) {
     }
 
     this.remove();
-}
+};
 
 function makeLinks() {
     boards[0].validator.otherValidator = boards[1].validator;
@@ -474,14 +477,14 @@ var socket, boards = [], seat_to_socket = {}, name = '';
 
 $(document).ready(function() {
     // Set up socket.io
-    if (document.URL.indexOf('localhost') == -1) {
+    if (document.URL.indexOf('localhost') === -1) {
         socket = io.connect('http://nealwu.com:8000');
     } else {
         socket = io.connect('http://localhost:8000');
     }
 
     socket.on('update', function(validators) {
-        if (boards.length == 0) {
+        if (boards.length === 0) {
             // Create two boards AFTER the socket is connected
             boards = [new ChessBoard(0), new ChessBoard(1)];
         }
@@ -499,8 +502,9 @@ $(document).ready(function() {
     $('.sit_button').click(function(event) {
         var position = this.id.substring(this.id.length - 3);
 
-        if (name == '') {
-            name = prompt('What is your name?');
+        if (name === '') {
+            // name = prompt('What is your name?');
+            name = $('#username').text();
         }
 
         socket.emit('sit', getGameID(), {position: position, name: name});
@@ -514,8 +518,19 @@ $(document).ready(function() {
         $('#sit' + position).val(name);
         seat_to_socket[position] = socketID;
 
-        if (socketID == socket.id) {
+        if (socketID === socket.id) {
             $('#sit' + position).css('font-weight', 'bold');
         }
+    });
+
+    $('#chat').keypress(function(event) {
+        if (event.which === 13) {
+            socket.emit('chat', getGameID(), $('#chat').val());
+            $('#chat').val('');
+        }
+    });
+
+    socket.on('chat', function(message) {
+        $('#chats').append($('<p>').text(message));
     });
 });

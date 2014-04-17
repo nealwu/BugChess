@@ -1,3 +1,5 @@
+/* globals $, io, console */
+
 function reverse(list) {
     var n = list.length;
 

@@ -26,6 +26,18 @@
         <div id="name1_B" class="name name1"><input id="sit1_B" class="sit_button" type="button" value="Sit!"></div>
         <div id="timer1_B" class="timer timer1"></div>
       </div>
-    </div>
+      <div class="right-stuff">
+        <img width=300px src="/images/logos/bugchess.png" />
+        <div id="chatbox">
+          <div id="chats">
+            <p>neal: hi there!</p>
+            <p>paul: how's it going?</p>
+          </div>
+          <label for="chat">Enter chat:</label>
+          <input id="chat" name="chat" type="text" placeholder="Say hi!" />
+        </div>
+        <p>Hello <%= user.username %>!</p>
+      </div>
+    <div id="username" style="display: none"><%= user.username%></div>
   </body>
 </html>

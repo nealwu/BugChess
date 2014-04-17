@@ -28,3 +28,13 @@
 .timer1, .name0 {
     float: right;
 }
+
+.right-stuff {
+    float: right;
+    padding-right: 30px;
+}
+
+#chatbox {
+    padding: 10px;
+    border: 1px solid black;
+}

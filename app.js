@@ -1,10 +1,12 @@
-PORT = 8000;
-GAME_PREFIX = 'game';
+/* globals require, console */
+
+var PORT = 8000;
+var GAME_PREFIX = 'game';
 
 var flash         = require('connect-flash'),
     express       = require('express'),
     passport      = require('passport'),
-    util          = require('util')
+    util          = require('util'),
     LocalStrategy = require('passport-local').Strategy,
     app           = express(),
     server        = require('http').createServer(app),
@@ -13,33 +15,41 @@ var flash         = require('connect-flash'),
     db            = require('mongojs').connect('bughouse', ['games', 'users']);
 
 var ChessValidatorJS = require('./public/javascripts/ChessValidator');
-var ChessValidator = ChessValidatorJS.ChessValidator, fixPrototypes = ChessValidatorJS.fixPrototypes;
+var ChessValidator = ChessValidatorJS.ChessValidator;
+var fixPrototypes = ChessValidatorJS.fixPrototypes;
 
 // Passport code BEGIN
 var users = [
-    {id: 1, username: 'bob', password: 'secret', email: 'bob@example.com'},
-    {id: 2, username: 'joe', password: 'birthday', email: 'joe@example.com'}
+    {username: 'bob', password: 'secret', email: 'bob@example.com'},
+    {username: 'joe', password: 'birthday', email: 'joe@example.com'}
 ];
 
-function findById(id, fn) {
-    var idx = id - 1;
-    if (users[idx]) {
-        fn(null, users[idx]);
-    } else {
-        fn(new Error('User ' + id + ' does not exist'));
-    }
+db.users.ensureIndex({username: 1}, {unique: true});
+db.users.ensureIndex({email: 1}, {unique: true});
+
+for (var i = 0; i < users.length; i++) {
+    db.users.save(users[i]);
 }
 
 function findByUsername(username, fn) {
-    for (var i = 0, len = users.length; i < len; i++) {
-        var user = users[i];
-        if (user.username === username) {
-            return fn(null, user);
+    db.users.find({username: username}, function(error, docs) {
+        if (!error && docs && docs.length > 0) {
+            fn(null, docs[0]);
+        } else {
+            fn(null, null);
         }
-    }
-    return fn(null, null);
+    });
 }
 
+function findByEmail(email, fn) {
+    db.users.find({email: email}, function(error, docs) {
+        if (!error && docs && docs.length > 0) {
+            fn(null, docs[0]);
+        } else {
+            fn(null, null);
+        }
+    });
+}
 
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
@@ -47,15 +57,14 @@ function findByUsername(username, fn) {
 //   this will be as simple as storing the user ID when serializing, and finding
 //   the user by ID when deserializing.
 passport.serializeUser(function(user, done) {
-    done(null, user.id);
+    done(null, user.username);
 });
 
-passport.deserializeUser(function(id, done) {
-    findById(id, function (err, user) {
+passport.deserializeUser(function(username, done) {
+    findByUsername(username, function(err, user) {
         done(err, user);
     });
 });
-
 
 // Use the LocalStrategy within Passport.
 //   Strategies in passport require a `verify` function, which accept
@@ -65,18 +74,23 @@ passport.deserializeUser(function(id, done) {
 passport.use(new LocalStrategy(
     function(username, password, done) {
         // asynchronous verification, for effect...
-        process.nextTick(function () {
-      
+        process.nextTick(function() {
             // Find the user by username.  If there is no user with the given
             // username, or the password is not correct, set the user to `false` to
             // indicate failure and set a flash message.  Otherwise, return the
             // authenticated `user`.
             findByUsername(username, function(err, user) {
-                if (err) { return done(err); }
-                if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
-                if (user.password != password) { return done(null, false, { message: 'Invalid password' }); }
-                return done(null, user);
-            })
+                if (err) {
+                    return done(err);
+                } else if (!user) {
+                    return done(null, false,
+                        {message: 'Unknown user ' + username + '!'});
+                } else if (user.password != password) {
+                    return done(null, false, {message: 'Invalid password!'});
+                } else {
+                    return done(null, user);
+                }
+            });
         });
     }
 ));
@@ -110,8 +124,8 @@ app.get('/', ensureAuthenticated, function(req, res) {
     res.render('home');
 });
 
-app.get('/game/:gameID', function(req, res) {
-    res.render('game');
+app.get('/game/:gameID', ensureAuthenticated, function(req, res) {
+    res.render('game', {user: req.user});
 });
 
 // Simple route middleware to ensure user is authenticated.
@@ -128,7 +142,11 @@ function ensureAuthenticated(req, res, next) {
 }
 
 app.get('/login', function(req, res) {
-    res.render('login', { user: req.user, message: req.flash('error') });
+    res.render('login', { user: req.user, message: req.flash('message') });
+});
+
+app.get('/register', function(req, res) {
+    res.render('register', { user: req.user });
 });
 
 // POST /login
@@ -138,8 +156,19 @@ app.get('/login', function(req, res) {
 //   which, in this example, will redirect the user to the home page.
 //
 //   curl -v -d "username=bob&password=secret" http://127.0.0.1:3000/login
-app.post('/login', passport.authenticate('local', { failureRedirect: '/login', failureFlash: true }), function(req, res) {
+app.post('/login',
+         passport.authenticate('local', { failureRedirect: '/login', failureFlash: true }),
+         function(req, res) {
     res.redirect('/');
+});
+
+app.post('/register', function(req, res) {
+    var user = req.body;
+    console.log(user);
+    db.users.save(user, function() {
+        req.flash('message', 'Successfully registered! Please login.');
+        res.redirect('/login');
+    });
 });
 
 app.get('/account', ensureAuthenticated, function(req, res) {
@@ -287,7 +316,7 @@ io.sockets.on('connection', function(socket) {
             var number = parseInt(move[0]);
             move = move.substring(2, move.length);
 
-            if (number != 0 && number != 1) {
+            if (number !== 0 && number !== 1) {
                 console.log('Illegal move!');
                 return;
             }
@@ -318,11 +347,21 @@ io.sockets.on('connection', function(socket) {
     socket.on('sit', function(gameID, data) {
         var position = data.position;
         var name = data.name;
-        console.log(name + ' (' + socket.id + ') wants to sit in position ' + position + ' in game ' + gameID);
+        console.log(name + ' (' + socket.id + ') wants to sit in position ' + position +
+            ' in game ' + gameID);
 
         if (socketSit(socket.id, gameID, position, name)) {
-            console.log(name + ' (' + socket.id + ') approved for position ' + position + ' in game ' + gameID);
-            io.sockets.in(GAME_PREFIX + gameID).emit('sit', {socketID: socket.id, position: position, name: name});
+            console.log(name + ' (' + socket.id + ') approved for position ' + position +
+                ' in game ' + gameID);
+            io.sockets.in(GAME_PREFIX + gameID).emit('sit', {
+                socketID: socket.id,
+                position: position,
+                name: name
+            });
         }
-    })
+    });
+
+    socket.on('chat', function(gameID, message) {
+        io.sockets.in(GAME_PREFIX + gameID).emit('chat', message);
+    });
 });
