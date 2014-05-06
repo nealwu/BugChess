@@ -1,5 +1,7 @@
 /* globals require, console, process, __dirname */
 
+var PRIVATE_ID = 1000000;
+
 var PORT = 8000;
 var GAME_PREFIX = 'game';
 
@@ -222,14 +224,14 @@ function doesUserExist(username, callback) {
     });
 }
 
-function saveGame(gameID, validators) {
+function saveGame(gameID, validators, started) {
     doesGameExist(gameID, function(exists) {
         killLinks(validators);
 
         if (exists) {
-            db.games.update({gameID: gameID}, {$set: {game: JSON.stringify(validators)}});
+            db.games.update({gameID: gameID}, {$set: {game: JSON.stringify(validators), started: started}});
         } else {
-            db.games.save({gameID: gameID, game: JSON.stringify(validators)});
+            db.games.save({gameID: gameID, game: JSON.stringify(validators), started: started});
         }
 
         makeLinks(validators);
@@ -250,7 +252,7 @@ function loadGame(gameID, callback) {
         } else {
             console.log('Game ' + gameID + ' not found in DB! Creating new game...');
             validators = [new ChessValidator(), new ChessValidator()];
-            saveGame(gameID, validators);
+            saveGame(gameID, validators, false);
         }
 
         callback(validators);
@@ -345,7 +347,7 @@ io.sockets.on('connection', function(socket) {
             }
 
             console.log('Legal move!');
-            saveGame(gameID, validators);
+            saveGame(gameID, validators, true);
             sendUpdate(gameID, validators);
         });
     });
@@ -381,5 +383,44 @@ io.sockets.on('connection', function(socket) {
 
     socket.on('chat', function(gameID, username, message) {
         io.sockets.in(GAME_PREFIX + gameID).emit('chat', username, message);
+    });
+
+    socket.on('new_public_game', function() {
+        db.games.find(function(error, docs) {
+            var gameID = -1;
+            var gameIDs = [];
+
+            if (!error && docs) {
+                docs.forEach(function(doc) {
+                    gameIDs.push(doc.gameID);
+
+                    if (doc.gameID < PRIVATE_ID && !doc.started) {
+                        gameID = doc.gameID;
+                    }
+                });
+            }
+
+            if (gameID === -1) {
+                gameIDs.sort();
+
+                for (var i = 0; i < gameIDs.length; i++) {
+                    if (gameIDs[i] !== i) {
+                        gameID = i;
+                        break;
+                    }
+                }
+
+                if (gameID === -1) {
+                    gameID = gameIDs.length;
+                }
+            }
+
+            socket.emit('go_to_game', gameID);
+        });
+    });
+
+    socket.on('new_private_game', function() {
+        var gameID = Math.floor(PRIVATE_ID + PRIVATE_ID * Math.random());
+        socket.emit('go_to_game', gameID);
     });
 });

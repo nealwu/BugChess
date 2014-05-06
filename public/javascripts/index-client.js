@@ -32,4 +32,16 @@ $(document).ready(function() {
     });
 
     socket.emit('get_games');
+
+    $('#new-public-game').click(function() {
+        socket.emit('new_public_game');
+    });
+
+    $('#new-private-game').click(function() {
+        socket.emit('new_private_game');
+    });
+
+    socket.on('go_to_game', function(gameID) {
+        window.location.href = '/game/' + gameID;
+    });
 });

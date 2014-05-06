@@ -328,7 +328,7 @@ ChessBoard.prototype.makeMove = function(move) {
 
     // Send the move to the server
     var emitMove = this.number + '_' + move;
-    socket.emit('make_move', getGameID(), emitMove);
+    socket.emit('make_move', getGameID(), emitMove);z
     console.log('Sent: ' + emitMove);
     return true;
 };
@@ -487,6 +487,11 @@ $(document).ready(function() {
         socket = io.connect('http://nealwu.com:8000');
     } else {
         socket = io.connect('http://localhost:8000');
+    }
+
+    if (username === '') {
+        // name = prompt('What is your name?');
+        username = $('#username').text();
     }
 
     socket.on('update', function(validators) {
