@@ -1,4 +1,4 @@
-/* globals require, console */
+/* globals require, console, process, __dirname */
 
 var PORT = 8000;
 var GAME_PREFIX = 'game';
@@ -6,7 +6,6 @@ var GAME_PREFIX = 'game';
 var flash         = require('connect-flash'),
     express       = require('express'),
     passport      = require('passport'),
-    util          = require('util'),
     LocalStrategy = require('passport-local').Strategy,
     app           = express(),
     server        = require('http').createServer(app),
@@ -142,7 +141,10 @@ function ensureAuthenticated(req, res, next) {
 }
 
 app.get('/login', function(req, res) {
-    res.render('login', { user: req.user, message: req.flash('message') });
+    res.render('login', {
+        user: req.user,
+        message: req.flash('message') + req.flash('error')
+    });
 });
 
 app.get('/register', function(req, res) {
@@ -156,18 +158,28 @@ app.get('/register', function(req, res) {
 //   which, in this example, will redirect the user to the home page.
 //
 //   curl -v -d "username=bob&password=secret" http://127.0.0.1:3000/login
-app.post('/login',
-         passport.authenticate('local', { failureRedirect: '/login', failureFlash: true }),
-         function(req, res) {
-    res.redirect('/');
-});
+app.post('/login', passport.authenticate('local', {
+        failureRedirect: '/login',
+        failureFlash: 'Invalid username or password.'
+    }),
+    function(req, res) {
+        res.redirect('/');
+    }
+);
 
 app.post('/register', function(req, res) {
     var user = req.body;
-    console.log(user);
-    db.users.save(user, function() {
-        req.flash('message', 'Successfully registered! Please login.');
-        res.redirect('/login');
+
+    doesUserExist(user.username, function(exists) {
+        if (exists) {
+            req.flash('message', 'User already exists.');
+            res.redirect('/login');
+        } else {
+            db.users.save(user, function() {
+                req.flash('message', 'Successfully registered! Please login.');
+                res.redirect('/login');
+            });
+        }
     });
 });
 
@@ -200,6 +212,12 @@ function sendUpdate(gameID, validators) {
 
 function doesGameExist(gameID, callback) {
     db.games.find({gameID: gameID}, function(error, docs) {
+        callback(!error && docs && docs.length > 0);
+    });
+}
+
+function doesUserExist(username, callback) {
+    db.users.find({username: username}, function(error, docs) {
         callback(!error && docs && docs.length > 0);
     });
 }
@@ -361,7 +379,7 @@ io.sockets.on('connection', function(socket) {
         }
     });
 
-    socket.on('chat', function(gameID, message) {
-        io.sockets.in(GAME_PREFIX + gameID).emit('chat', message);
+    socket.on('chat', function(gameID, username, message) {
+        io.sockets.in(GAME_PREFIX + gameID).emit('chat', username, message);
     });
 });

@@ -3,6 +3,9 @@
 <html>
   <head>
     <title>Bughouse!</title>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/bootstrap-theme.css">
+    <link rel="stylesheet" type="text/css" href="/stylesheets/all.css">
     <link rel="stylesheet" type="text/css" href="/stylesheets/board-style.css">
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="/javascripts/jquery.min.js"></script>
@@ -30,13 +33,10 @@
         <img width=300px src="/images/logos/bugchess.png" />
         <div id="chatbox">
           <div id="chats">
-            <p>neal: hi there!</p>
-            <p>paul: how's it going?</p>
           </div>
           <label for="chat">Enter chat:</label>
           <input id="chat" name="chat" type="text" placeholder="Say hi!" />
         </div>
-        <p>Hello <%= user.username %>!</p>
       </div>
     <div id="username" style="display: none"><%= user.username%></div>
   </body>

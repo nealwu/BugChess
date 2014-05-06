@@ -1,5 +1,7 @@
 /* globals console, alert, Timer, $, ChessValidator, Raphael, STARTING_BOARD, io, fixPrototypes */
 
+var MAX_CHATS = 10;
+
 var BOARD_SIZE = 8;
 var SQUARE_PIXELS;
 
@@ -448,32 +450,36 @@ function makeLinks() {
     boards[1].validator.otherValidator = boards[0].validator;
 }
 
+var checkmated = false;
+
 function displayBoards() {
     boards[0].getBoardFromValidator();
     boards[1].getBoardFromValidator();
 
     // Hack; raphael's image function doesn't have callback
-    setTimeout(function() {
-        if (boards[0].validator.isCheckmate()) {
+    window.setTimeout(function() {
+        if (!checkmated && boards[0].validator.isCheckmate()) {
             alert('Checkmate on left board!');
+            checkmated = true;
         }
 
-        if (boards[1].validator.isCheckmate()) {
+        if (!checkmated && boards[1].validator.isCheckmate()) {
             alert('Checkmate on right board!');
+            checkmated = true;
         }
-    });
+    }, 1000);
 }
 
 function stopTimers() {
-    clearInterval(boards[0].timerInterval);
-    clearInterval(boards[1].timerInterval);
+    window.clearInterval(boards[0].timerInterval);
+    window.clearInterval(boards[1].timerInterval);
 }
 
 function getGameID() {
     return parseInt(document.URL.substring(document.URL.lastIndexOf('/') + 1));
 }
 
-var socket, boards = [], seat_to_socket = {}, name = '';
+var socket, boards = [], seat_to_socket = {}, username = '';
 
 $(document).ready(function() {
     // Set up socket.io
@@ -502,12 +508,12 @@ $(document).ready(function() {
     $('.sit_button').click(function(event) {
         var position = this.id.substring(this.id.length - 3);
 
-        if (name === '') {
+        if (username === '') {
             // name = prompt('What is your name?');
-            name = $('#username').text();
+            username = $('#username').text();
         }
 
-        socket.emit('sit', getGameID(), {position: position, name: name});
+        socket.emit('sit', getGameID(), {position: position, name: username});
     });
 
     socket.on('sit', function(data) {
@@ -525,12 +531,41 @@ $(document).ready(function() {
 
     $('#chat').keypress(function(event) {
         if (event.which === 13) {
-            socket.emit('chat', getGameID(), $('#chat').val());
+            socket.emit('chat', getGameID(), $('#username').text(), $('#chat').val());
             $('#chat').val('');
         }
     });
 
-    socket.on('chat', function(message) {
-        $('#chats').append($('<p>').text(message));
+    function hourAMPM(hour) {
+        var ampm = hour < 12 ? 'am' : 'pm';
+        return [(hour + 11) % 12 + 1, ampm];
+    }
+
+    function padOnce(number) {
+        return parseInt(number) < 10 ? '0' + number : number;
+    }
+
+    socket.on('chat', function(username, message) {
+        var date = new Date();
+        var h = hourAMPM(date.getHours());
+        var time = h[0] + ':' +
+                   padOnce(date.getMinutes()) + ':' +
+                   padOnce(date.getSeconds()) + ' ' +
+                   h[1];
+
+        $('#chats').append($('<p class="chat">').html(
+            '[' + time + '] <strong>' + username + '</strong>: ' + message
+        ));
+
+        $('#chats').append($('<br>'));
+        $('#chats').append($('<br>'));
+
+        var chatsChildren = $('#chats').children();
+
+        if (chatsChildren.length > 3 * MAX_CHATS) {
+            chatsChildren[0].remove();
+            chatsChildren[1].remove();
+            chatsChildren[2].remove();
+        }
     });
 });

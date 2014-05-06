@@ -1,0 +1,11 @@
+body {
+    padding: 15px;
+}
+
+label {
+    padding-right: 10px;
+}
+
+.chat {
+    float: left;
+}
