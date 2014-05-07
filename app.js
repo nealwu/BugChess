@@ -20,17 +20,9 @@ var ChessValidator = ChessValidatorJS.ChessValidator;
 var fixPrototypes = ChessValidatorJS.fixPrototypes;
 
 // Passport code BEGIN
-var users = [
-    {username: 'bob', password: 'secret', email: 'bob@example.com'},
-    {username: 'joe', password: 'birthday', email: 'joe@example.com'}
-];
 
 db.users.ensureIndex({username: 1}, {unique: true});
 db.users.ensureIndex({email: 1}, {unique: true});
-
-for (var i = 0; i < users.length; i++) {
-    db.users.save(users[i]);
-}
 
 function findByUsername(username, fn) {
     db.users.find({username: username}, function(error, docs) {
