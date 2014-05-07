@@ -290,7 +290,11 @@ function socketSit(socketID, gameID, position, name) {
 }
 
 function socketPermission(socketID, gameID, position, name) {
-    return game_seat_to_socket[gameID][position] == socketID || game_seat_to_name[gameID][position] == name;
+    if (game_seat_to_socket[gameID] === undefined || game_seat_to_name[gameID] === undefined) {
+        return false;
+    }
+
+    return game_seat_to_socket[gameID][position] === socketID || game_seat_to_name[gameID][position] === name;
 }
 
 io.sockets.on('connection', function(socket) {
