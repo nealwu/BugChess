@@ -315,20 +315,14 @@ ChessBoard.prototype.makeMove = function(move) {
     if (!this.validator.isLegalMove(move)) {
         return false;
     }
-/*
-    var position = move.substring(0, 3);
 
-    if (seat_to_socket[position] !== socket.id) {
-        return false;
-    }
-*/
     this.validator.makeMove(move);
     this.lastMove = move;
     displayBoards();
 
     // Send the move to the server
     var emitMove = this.number + '_' + move;
-    socket.emit('make_move', getGameID(), emitMove);z
+    socket.emit('make_move', getGameID(), emitMove, username);
     console.log('Sent: ' + emitMove);
     return true;
 };
@@ -483,11 +477,7 @@ var socket, boards = [], seat_to_socket = {}, username = '';
 
 $(document).ready(function() {
     // Set up socket.io
-    if (document.URL.indexOf('localhost') === -1) {
-        socket = io.connect('http://nealwu.com:8000');
-    } else {
-        socket = io.connect('http://localhost:8000');
-    }
+    socket = io.connect();
 
     if (username === '') {
         // name = prompt('What is your name?');

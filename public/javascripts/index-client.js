@@ -14,11 +14,7 @@ var socket;
 
 $(document).ready(function() {
     // Set up socket.io
-    if (document.URL.indexOf('localhost') == -1) {
-        socket = io.connect('http://nealwu.com:8000');
-    } else {
-        socket = io.connect('http://localhost:8000');
-    }
+    socket = io.connect();
 
     socket.on('games', function(docs) {
         reverse(docs);

@@ -121,6 +121,11 @@ app.configure('development', function() {
     app.use(express.errorHandler({ showStack: true, dumpExceptions: true }));
 });
 
+io.configure(function() {
+    io.set('transports', ['xhr-polling']);
+    io.set('polling duration', 1);
+});
+
 app.get('/', ensureAuthenticated, function(req, res) {
     res.render('home');
 });
@@ -143,9 +148,15 @@ function ensureAuthenticated(req, res, next) {
 }
 
 app.get('/login', function(req, res) {
+    var message = req.flash('message') + req.flash('error');
+
+    if (message.length === 0) {
+        message = ['Welcome to Bugchess.com! To get started, login and then start playing right away! Or register for an account above.'];
+    }
+
     res.render('login', {
         user: req.user,
-        message: req.flash('message') + req.flash('error')
+        message: message
     });
 });
 
@@ -278,13 +289,8 @@ function socketSit(socketID, gameID, position, name) {
     return true;
 }
 
-function socketPermission(socketID, gameID, position) {
-    if (!game_seat_to_socket[gameID]) {
-        return false;
-    }
-
-    console.log(game_seat_to_socket[gameID][position] + ' ' + socketID);
-    return game_seat_to_socket[gameID][position] == socketID;
+function socketPermission(socketID, gameID, position, name) {
+    return game_seat_to_socket[gameID][position] == socketID || game_seat_to_name[gameID][position] == name;
 }
 
 io.sockets.on('connection', function(socket) {
@@ -314,7 +320,7 @@ io.sockets.on('connection', function(socket) {
         }
     });
 
-    socket.on('make_move', function(gameID, move) {
+    socket.on('make_move', function(gameID, move, username) {
         console.log('ID: ' + socket.id);
         console.log('Make move in game ' + gameID);
 
@@ -326,7 +332,7 @@ io.sockets.on('connection', function(socket) {
 
             var position = move.substring(0, 3);
 
-            if (!socketPermission(socket.id, gameID, position)) {
+            if (!socketPermission(socket.id, gameID, position, username)) {
                 console.log('This socket does not have permission to move this position');
                 sendUpdate(gameID, validators);
                 return;
