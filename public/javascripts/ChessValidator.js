@@ -1,4 +1,4 @@
-/* globals console */
+/* globals console, module */
 
 var BOARD_SIZE = 8;
 
@@ -63,14 +63,7 @@ function isLowerCase(str) {
 }
 
 function deepCopy(array) {
-    var jqueryCopy = $.extend(true, {}, array);
-    var newArray = [];
-
-    for (var i in jqueryCopy) {
-        newArray.push(jqueryCopy[i]);
-    }
-
-    return newArray;
+    return JSON.parse(JSON.stringify(array));
 }
 
 function arraysEqual(a, b) {
@@ -1014,5 +1007,4 @@ var exports = {ChessValidator: ChessValidator, fixPrototypes: fixPrototypes};
 // Hack: will only be true if on the server
 if (typeof module !== 'undefined') {
     module.exports = exports;
-    $ = require('jquery');
 }
