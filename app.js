@@ -7,13 +7,20 @@ var GAME_PREFIX = 'game';
 
 var flash         = require('connect-flash'),
     express       = require('express'),
+    path          = require('path'),
+    favicon       = require('serve-favicon'),
+    logger        = require('morgan'),
+    cookieParser  = require('cookie-parser'),
+    bodyParser    = require('body-parser'),
+    methodOverride= require('method-override'),
     passport      = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
+    errorHandler  = require('errorhandler'),
     app           = express(),
     server        = require('http').createServer(app),
     io            = require('socket.io').listen(server),
-    path          = require('path'),
-    db            = require('mongojs').connect('bughouse', ['games', 'users']);
+    mongojs       = require('mongojs')
+    db            = mongojs('bughouse', ['games', 'users']);
 
 var ChessValidatorJS = require('./public/javascripts/ChessValidator');
 var ChessValidator = ChessValidatorJS.ChessValidator;
@@ -89,34 +96,30 @@ passport.use(new LocalStrategy(
 ));
 // Passport code END
 
-app.configure(function() {
-    app.set('port', process.env.PORT || PORT);
-    app.set('views', __dirname + '/views');
-    app.set('view engine', 'ejs');
-    app.use(express.favicon());
-    app.use(express.logger('dev'));
-    app.use(express.cookieParser());
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(express.session({ secret: 'keyboard cat' }));
-    app.use(flash());
-    app.use(passport.initialize());
-    app.use(passport.session());
-    app.use(app.router);
-    app.use(express.static(path.join(__dirname, 'public')));
+var env = process.env.NODE_ENV || 'development';
 
-    // Don't output debug logs
-    io.set('log level', 2);
-});
+app.set('port', process.env.PORT || PORT);
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+// app.use(favicon(__dirname + '/public/favicon.ico'));
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(methodOverride());
+app.use(require('express-session')({
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: false
+}));
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
 
-app.configure('development', function() {
-    app.use(express.errorHandler({ showStack: true, dumpExceptions: true }));
-});
-
-io.configure(function() {
-    io.set('transports', ['xhr-polling']);
-    io.set('polling duration', 1);
-});
+// io.configure(function() {
+//     io.set('transports', ['xhr-polling']);
+//     io.set('polling duration', 1);
+// });
 
 app.get('/', ensureAuthenticated, function(req, res) {
     res.render('home');
@@ -198,6 +201,14 @@ app.get('/logout', function(req, res) {
 });
 
 server.listen(app.get('port'));
+
+app.use(express.static(path.join(__dirname, 'public')));
+// Don't output debug logs
+// io.set('log level', 2);
+
+if ('development' == env) {
+   app.use(errorHandler({ showStack: true, dumpExceptions: true }));
+}
 
 function makeLinks(validators) {
     validators[0].otherValidator = validators[1];
