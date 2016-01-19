@@ -5,22 +5,22 @@ var PRIVATE_ID = 1000000;
 var PORT = 8000;
 var GAME_PREFIX = 'game';
 
-var flash         = require('connect-flash'),
-    express       = require('express'),
-    path          = require('path'),
-    favicon       = require('serve-favicon'),
-    logger        = require('morgan'),
-    cookieParser  = require('cookie-parser'),
-    bodyParser    = require('body-parser'),
-    methodOverride= require('method-override'),
-    passport      = require('passport'),
-    LocalStrategy = require('passport-local').Strategy,
-    errorHandler  = require('errorhandler'),
-    app           = express(),
-    server        = require('http').createServer(app),
-    io            = require('socket.io').listen(server),
-    mongojs       = require('mongojs')
-    db            = mongojs('bughouse', ['games', 'users']);
+var flash          = require('connect-flash'),
+    express        = require('express'),
+    path           = require('path'),
+    favicon        = require('serve-favicon'),
+    logger         = require('morgan'),
+    cookieParser   = require('cookie-parser'),
+    bodyParser     = require('body-parser'),
+    methodOverride = require('method-override'),
+    passport       = require('passport'),
+    LocalStrategy  = require('passport-local').Strategy,
+    errorHandler   = require('errorhandler'),
+    app            = express(),
+    server         = require('http').createServer(app),
+    io             = require('socket.io').listen(server),
+    mongojs        = require('mongojs')
+    db             = mongojs('bughouse', ['games', 'users']);
 
 var ChessValidatorJS = require('./public/javascripts/ChessValidator');
 var ChessValidator = ChessValidatorJS.ChessValidator;
@@ -207,8 +207,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Don't output debug logs
 // io.set('log level', 2);
 
-if ('development' == env) {
-   app.use(errorHandler({ showStack: true, dumpExceptions: true }));
+if (env === 'development') {
+    app.use(errorHandler({ showStack: true, dumpExceptions: true }));
 }
 
 function makeLinks(validators) {
