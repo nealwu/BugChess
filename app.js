@@ -302,7 +302,6 @@ function socketPermission(socketID, gameID, position, name) {
 }
 
 io.sockets.on('connection', function(socket) {
-
     socket.on('start_game', function(gameID) {
         if (isNaN(gameID)) {
             console.log('Invalid gameID in URL! Setting to 0...');
