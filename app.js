@@ -85,7 +85,7 @@ passport.use(new LocalStrategy(
                 } else if (!user) {
                     return done(null, false,
                         {message: 'Unknown user ' + username + '!'});
-                } else if (user.password != password) {
+                } else if (user.password !== password) {
                     return done(null, false, {message: 'Invalid password!'});
                 } else {
                     return done(null, user);
@@ -94,6 +94,7 @@ passport.use(new LocalStrategy(
         });
     }
 ));
+
 // Passport code END
 
 var env = process.env.NODE_ENV || 'development';
