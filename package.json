@@ -15,7 +15,7 @@
     "moment": "^2.11.1",
     "method-override": "^2.3.5",
     "morgan": "^1.6.1",
-    "mongojs": "^1.4.1",
+    "mongojs": "^2.3.0",
     "passport-local": "^1.0.0",
     "socket.io": "^1.4.4",
     "passport": "^0.3.2",
