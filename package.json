@@ -24,6 +24,9 @@
   "devDependencies": {
     "nodemon": "^1.8.1"
   },
+  "engines": {
+    "node": "^5.5.0"
+  },
   "scripts": {
     "start": "nodemon ./bin/www",
     "test": "echo \"Error: no test specified\" && exit 1"
