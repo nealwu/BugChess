@@ -27,9 +27,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(methodOverride());
 app.use(expressSession({
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: false
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: false
 }));
 app.use(flash());
 

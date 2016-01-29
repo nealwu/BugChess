@@ -1,40 +1,40 @@
 #boards {
-    text-align: center;
+  text-align: center;
 }
 
 .board_div {
-    display: inline-block;
-    position: relative;
-    top: -10px;
+  display: inline-block;
+  position: relative;
+  top: -10px;
 }
 
 .right_board {
-    margin-top: 25px;
-    margin-left: 50px;
+  margin-top: 25px;
+  margin-left: 50px;
 }
 
 .timer, .name {
-    font-family: Helvetica, Arial, Sans-Serif;
+  font-family: Helvetica, Arial, Sans-Serif;
 }
 
 .timer {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .timer0, .name1 {
-    float: left;
+  float: left;
 }
 
 .timer1, .name0 {
-    float: right;
+  float: right;
 }
 
 .right-stuff {
-    float: right;
-    padding-right: 30px;
+  float: right;
+  padding-right: 30px;
 }
 
 #chatbox {
-    padding: 10px;
-    border: 1px solid black;
+  padding: 10px;
+  border: 1px solid black;
 }
