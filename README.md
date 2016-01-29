@@ -2,8 +2,8 @@
 
 Setup Instructions:
 ```console
-brew install node             #last tested w/ 5.0.0
+brew install node             #last tested w/ 5.5.0
 npm install
 mongod
-node app.js
+npm start
 ```
