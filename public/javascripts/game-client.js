@@ -1,6 +1,6 @@
 /* globals console, alert, Timer, $, ChessValidator, Raphael, STARTING_BOARD, io, fixPrototypes */
 
-var MAX_CHATS = 10;
+var MAX_CHATS = 15;
 
 var BOARD_SIZE = 8;
 var SQUARE_PIXELS;
@@ -219,12 +219,12 @@ ChessBoard.prototype.initBoard = function() {
 
 ChessBoard.prototype.startTimer = function() {
   if (this.timerInterval) {
-    clearInterval(this.timerInterval);
+    window.clearInterval(this.timerInterval);
   }
 
   var self = this;
 
-  this.timerInterval = setInterval(function() {
+  this.timerInterval = window.setInterval(function() {
     self.timers[self.validator.turn].updateTime();
   }, DisplayTimer.INTERVAL);
 };
@@ -552,15 +552,10 @@ $(document).ready(function() {
       '[' + time + '] <strong>' + username + '</strong>: ' + message
     ));
 
-    $('#chats').append($('<br>'));
-    $('#chats').append($('<br>'));
-
     var chatsChildren = $('#chats').children();
 
-    if (chatsChildren.length > 3 * MAX_CHATS) {
+    if (chatsChildren.length > MAX_CHATS) {
       chatsChildren[0].remove();
-      chatsChildren[1].remove();
-      chatsChildren[2].remove();
     }
   });
 });
