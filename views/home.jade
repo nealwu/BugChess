@@ -1,0 +1,14 @@
+extends layout
+
+block scripts
+  script(src='/socket.io/socket.io.js')
+  script(src='/javascripts/jquery.min.js')
+  script(src='/javascripts/index-client.js')
+
+block content
+  a#new-public-game.btn.btn-primary Join new game
+  a#new-private-game.btn.btn-danger Make private game
+  br
+  br
+  p Previous games:
+  div#games

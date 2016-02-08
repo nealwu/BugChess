@@ -1,0 +1,24 @@
+extends layout
+
+block content
+  form(action='/register' method='post')
+    table#registration
+      tr
+        td
+          label Email:
+        td
+          input(type='text' name='email')
+          br
+      tr
+        td
+          label Username:
+        td
+          input(type='text' name='username')
+          br
+      tr
+        td
+          label Password:
+        td
+          input(type='password' name='password')
+    div
+      input(type='submit' value='Register')

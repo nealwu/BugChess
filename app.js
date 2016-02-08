@@ -17,10 +17,11 @@ var env = process.env.NODE_ENV || 'development';
 if (env === 'development') {
   app.use(errorHandler({ showStack: true, dumpExceptions: true }));
   app.use(logger('dev'));
+  app.locals.pretty = true;
 }
 
 app.set('views', __dirname + '/views');
-app.set('view engine', 'ejs');
+app.set('view engine', 'jade');
 // app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));

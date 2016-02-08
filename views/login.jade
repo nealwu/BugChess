@@ -1,0 +1,21 @@
+extends layout
+
+block content
+  if message
+    p #{message}
+
+  form(action='/login' method='post')
+    table
+      tr
+        td
+          label Username:
+        td
+          input(type='text' name='username')
+      tr
+        td
+          label Password:
+        td
+          input(type='password' name='password')
+
+    div
+      input(type='submit' value='Login')

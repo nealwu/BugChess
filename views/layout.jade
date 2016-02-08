@@ -1,0 +1,24 @@
+doctype html
+
+html
+  head
+    title Bug Chess!
+    link(rel='stylesheet', href='/stylesheets/bootstrap.css')
+    link(rel='stylesheet', href='/stylesheets/bootstrap-theme.css')
+    link(rel='stylesheet', href='/stylesheets/all.css')
+    link(rel='stylesheet', href='/stylesheets/board-style.css')
+    block scripts
+
+  body
+    if user
+      p
+        a(href='/account') Account
+        span  | 
+        a(href='/logout') Log Out
+    else
+      p
+        a(href='/login') Log In
+        span  | 
+        a(href='/register') Register
+
+    block content

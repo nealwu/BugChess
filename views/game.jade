@@ -1,0 +1,35 @@
+extends layout
+
+block scripts
+  script(src='/socket.io/socket.io.js')
+  script(src='/javascripts/jquery.min.js')
+  script(src='/javascripts/raphael-min.js')
+  script(src='/javascripts/ChessValidator.js')
+  script(src='/javascripts/game-client.js')
+
+block content
+  p Share the link above with your friends and start playing! Or you can wait for someone to join.
+  div#boards
+    div.board_div
+      div#timer0_B.timer.timer0
+      div#name0_B.name.name0
+        input#sit0_B.sit_button(type='button' value='Sit!')
+      div#board0.board
+      div#timer0_W.timer.timer0
+      div#name0_W.name.name0
+        input#sit0_W.sit_button(type='button' value='Sit')
+    div.board_div.right_board
+      div#name1_W.name.name1
+        input#sit1_W.sit_button(type='button' value='Sit!')
+      div#timer1_W.timer.timer1
+      div#board1.board
+      div#name1_B.name.name1
+        input#sit1_B.sit_button(type='button' value='Sit!')
+      div#timer1_B.timer.timer1
+    div.right_stuff
+      img(width='300px' src='/images/logos/bugchess.png')
+      div#chatbox
+        div#chats
+        label(for='chat') Enter chat:
+        input#chat(name='chat' type='text' placeholder='Say hi!')
+  div#username(style='display: none') #{user.username}
