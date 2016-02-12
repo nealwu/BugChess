@@ -8,7 +8,7 @@ var SQUARE_PIXELS;
 if (navigator.userAgent.indexOf('iPhone') !== -1 || navigator.userAgent.indexOf('iPad') !== -1) {
   SQUARE_PIXELS = 45;
 } else {
-  SQUARE_PIXELS = 60;
+  SQUARE_PIXELS = 36;
 }
 
 var PIECE_OFFSET = 0;

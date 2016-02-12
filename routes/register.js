@@ -1,7 +1,10 @@
 var router = require('express').Router();
 
 router.get('/register', function(req, res) {
-  res.render('register', { user: req.user });
+  res.render('register', {
+    route: 'register',
+    user: req.user
+  });
 });
 
 router.post('/register', function(req, res) {

@@ -10,17 +10,24 @@ html
     block scripts
 
   body
-    if user
-      p
-        a(href='/') Home
-        span  | 
-        a(href='/account') Account
-        span  | 
-        a(href='/logout') Log Out
-    else
-      p
-        a(href='/login') Log In
-        span  | 
-        a(href='/register') Register
+    nav.navbar.navbar-default
+      div.container-fluid
+        div.navbar-header
+          a.navbar-brand(href='/')
+            img(height='20px' src='/images/logos/bugchess.png')
+        div
+          ul.nav.navbar-nav
+            if user
+              li(class=(route === 'home' ? 'active' : ''))
+                a(href='/') Home  
+              li(class=(route === 'account' ? 'active' : ''))
+                a(href='/account') Account
+              li(class=(route === 'logout' ? 'active' : ''))
+                a(href='/logout') Log Out
+            else
+              li(class=(route === 'login' ? 'active' : ''))
+                a(href='/login') Log In
+              li(class=(route === 'register' ? 'active' : ''))
+                a(href='/register') Register
 
     block content

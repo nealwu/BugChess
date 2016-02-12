@@ -1,20 +1,11 @@
-#game {
+#boards {
   text-align: center;
 }
 
-#boards, .board_div {
+.board_div {
   display: inline-block;
   position: relative;
-  top: -5px;
-}
-
-.right_board {
-  margin-top: 25px;
-  margin-left: 50px;
-}
-
-.timer, .name {
-  font-family: Helvetica, Arial, Sans-Serif;
+  padding: 10px;
 }
 
 .timer {
@@ -29,12 +20,13 @@
   float: right;
 }
 
-.right_stuff {
-  float: right;
-  padding-right: 30px;
+#chatbox {
+  padding: 5px;
+  width: 288px;
+  border: 1px solid black;
+  word-wrap: break-word;
 }
 
-#chatbox {
-  padding: 10px;
-  border: 1px solid black;
+#chatbox input {
+  width: 220px;
 }
