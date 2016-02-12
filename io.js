@@ -145,7 +145,6 @@ io.sockets.on('connection', function(socket) {
 
       if (!socketPermission(socket.id, gameID, position, username)) {
         console.log('This socket does not have permission to move this position');
-        sendUpdate(gameID, validators);
         return;
       }
 

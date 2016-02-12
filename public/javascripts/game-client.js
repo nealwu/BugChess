@@ -174,6 +174,7 @@ ChessBoard.prototype.defaultSquareColors = function() {
 };
 
 ChessBoard.prototype.initBoard = function() {
+  this.unrotatedNumber = this.number;
   this.bottomPlayer = this.number === 0 ? WHITE : BLACK;
 
   this.raphael = new Raphael('board' + this.number, BOARD_WIDTH, BOARD_HEIGHT);
@@ -314,6 +315,13 @@ ChessBoard.prototype.coordinatesToSquare = function(x, y, skipAssert) {
 };
 
 ChessBoard.prototype.makeMove = function(move) {
+  var seat = this.number + '_' + move[0];
+
+  if ($('#sit' + seat).val() !== username) {
+    console.log('You do not have permission to move this piece');
+    return false;
+  }
+
   if (!this.validator.isLegalMove(move)) {
     return false;
   }
@@ -323,13 +331,7 @@ ChessBoard.prototype.makeMove = function(move) {
   displayBoards();
 
   // Send the move to the server
-  var boardNumber = this.number;
-
-  if (shouldRotateBoards) {
-    boardNumber = 1 - boardNumber;
-  }
-
-  var emitMove = boardNumber + '_' + move;
+  var emitMove = this.unrotatedNumber + '_' + move;
   socket.emit('make_move', getGameID(), emitMove, username);
   console.log('Sent: ' + emitMove);
   return true;
@@ -383,9 +385,8 @@ ChessBoard.pieceEnd = function(event) {
   console.log(move);
 
   // Check for validity
-  if (ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
+  if (ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.makeMove(move)) {
     console.log('Legal move!');
-    this.paper.chessBoard.makeMove(move);
   } else {
     // Put back in place
     console.log('Illegal move!');
@@ -436,9 +437,8 @@ ChessBoard.bankEnd = function(event) {
   console.log(move);
 
   // Check for validity
-  if (count > 0 && ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.validator.isLegalMove(move)) {
+  if (count > 0 && ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.makeMove(move)) {
     console.log('Legal move!');
-    this.paper.chessBoard.makeMove(move);
   } else {
     // Put back in place
     console.log('Illegal move!');
@@ -517,6 +517,10 @@ $(document).ready(function() {
   $('.sit_button').click(function(event) {
     var position = this.id.substring(this.id.length - 3);
 
+    if (shouldRotateBoards) {
+      position[0] = position[0] === '0' ? '1' : '0';
+    }
+
     if (username === '') {
       // name = prompt('What is your name?');
       username = $('#username').text();
@@ -528,10 +532,15 @@ $(document).ready(function() {
   $('#rotate').click(function(event) {
     shouldRotateBoards = !shouldRotateBoards;
 
-    // Swap the two validators and re-display the boards
+    // Swap the two validators and unrotatedNumber's and re-display the boards
     var temp = boards[0].validator;
     boards[0].validator = boards[1].validator;
     boards[1].validator = temp;
+
+    temp = boards[0].unrotatedNumber;
+    boards[0].unrotatedNumber = boards[1].unrotatedNumber;
+    boards[1].unrotatedNumber = temp;
+
     displayBoards();
 
     // Swap the sitting names
@@ -576,14 +585,9 @@ $(document).ready(function() {
   socket.on('chat', function(username, message) {
     var date = new Date();
     var h = hourAMPM(date.getHours());
-    var time = h[0] + ':' +
-    padOnce(date.getMinutes()) + ':' +
-    padOnce(date.getSeconds()) + ' ' +
-    h[1];
+    var time = h[0] + ':' + padOnce(date.getMinutes()) + ':' + padOnce(date.getSeconds()) + ' ' + h[1];
 
-    $('#chats').append($('<p class="chat">').html(
-      '[' + time + '] <strong>' + username + '</strong>: ' + message
-    ));
+    $('#chats').append($('<p class="chat">').html('[' + time + '] <strong>' + username + '</strong>: ' + message));
 
     var chatsChildren = $('#chats').children();
 
