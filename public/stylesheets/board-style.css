@@ -24,6 +24,7 @@
   padding: 5px;
   width: 288px;
   border: 1px solid black;
+  word-wrap: break-word;
 }
 
 #chatbox input {
