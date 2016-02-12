@@ -680,7 +680,6 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
           var passant = this.getPieceAt(toCoords[0], fromCoords[1]).name;
           var passantFromSquare = this.coordinatesToSquare(toCoords[0], toCoords[1] + dir);
           var passantToSquare = this.coordinatesToSquare(toCoords[0], fromCoords[1]);
-          console.log(passantFromSquare + ' ' + passantToSquare);
           var passantMove = (player === WHITE ? BLACK : WHITE) + '_' + passantFromSquare + '-' + passantToSquare;
           capture = passant[1] === PAWN && this.lastMove === passantMove;
         }
@@ -732,7 +731,7 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
   return legal;
 };
 
-ChessValidator.prototype.legalMoves = function(checkmate) {
+ChessValidator.prototype.legalMoves = function(preventCheckmate) {
   // getAttackingSquares for everything, and also move forward once + twice for pawns
   // Then check isLegalMove, add to set
   // Also dropping pieces
@@ -752,7 +751,7 @@ ChessValidator.prototype.legalMoves = function(checkmate) {
           var attackSquare = this.coordinatesToSquare(coords[0], coords[1]);
           var move = player + '_' + square + '-' + attackSquare;
 
-          if (this.isLegalMove(move, checkmate)) {
+          if (this.isLegalMove(move, preventCheckmate)) {
             moves.push(move);
           }
         }
@@ -764,7 +763,7 @@ ChessValidator.prototype.legalMoves = function(checkmate) {
             var square1 = this.coordinatesToSquare(x, y + dy);
             var move1 = player + '_' + square + '-' + square1;
 
-            if (this.isLegalMove(move1, checkmate)) {
+            if (this.isLegalMove(move1, preventCheckmate)) {
               moves.push(move1);
             }
           }
@@ -773,7 +772,7 @@ ChessValidator.prototype.legalMoves = function(checkmate) {
             var square2 = this.coordinatesToSquare(x, y + 2 * dy);
             var move2 = player + '_' + square + '-' + square2;
 
-            if (this.isLegalMove(move2, checkmate)) {
+            if (this.isLegalMove(move2, preventCheckmate)) {
               moves.push(move2);
             }
           }
@@ -784,15 +783,15 @@ ChessValidator.prototype.legalMoves = function(checkmate) {
         var piece = BANK_PIECES[i];
         var move = player + '_' + piece + square;
 
-        if (checkmate) {
+        if (preventCheckmate) {
           this.bank[player][piece]++;
         }
 
-        if (this.isLegalMove(move, checkmate)) {
+        if (this.isLegalMove(move, preventCheckmate)) {
           moves.push(move);
         }
 
-        if (checkmate) {
+        if (preventCheckmate) {
           this.bank[player][piece]--;
         }
       }
@@ -802,11 +801,11 @@ ChessValidator.prototype.legalMoves = function(checkmate) {
   var move1 = player + '_0-0';
   var move2 = player + '_0-0-0';
 
-  if (this.isLegalMove(move1, checkmate)) {
+  if (this.isLegalMove(move1, preventCheckmate)) {
     moves.push(move1);
   }
 
-  if (this.isLegalMove(move2, checkmate)) {
+  if (this.isLegalMove(move2, preventCheckmate)) {
     moves.push(move2);
   }
 

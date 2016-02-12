@@ -367,6 +367,19 @@ ChessBoard.pieceStart = function(x, y, event) {
   var coords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
   this.paper.chessBoard.defaultSquareColors();
   this.paper.chessBoard.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
+
+  var square = this.paper.chessBoard.coordinatesToSquare(coords[0], coords[1]);
+  var legalMoves = this.paper.chessBoard.validator.legalMoves(false);
+
+  for (var i in legalMoves) {
+    var move = legalMoves[i];
+
+    if (move.substring(2, 4) === square) {
+      var toSquare = move.substring(5, 7);
+      var toCoords = this.paper.chessBoard.squareToCoordinates(toSquare);
+      this.paper.chessBoard.boardSquares[toCoords[0]][toCoords[1]].attr('fill', TO_COLOR);
+    }
+  }
 };
 
 ChessBoard.pieceMove = function(dx, dy, x, y, event) {
