@@ -360,6 +360,8 @@ ChessBoard.prototype.pixelsToSquare = function(x, y) {
 };
 
 ChessBoard.pieceStart = function(x, y, event) {
+  this.toFront();
+
   this.data('originalX', this.attr('x'));
   this.data('originalY', this.attr('y'));
 
@@ -411,6 +413,8 @@ ChessBoard.pieceEnd = function(event) {
 };
 
 ChessBoard.bankStart = function(x, y, event) {
+  this.toFront();
+
   var name = this.data('name');
   var player = name[0];
   var piece = name[1];
