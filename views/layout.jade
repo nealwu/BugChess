@@ -18,16 +18,41 @@ html
         div
           ul.nav.navbar-nav
             if user
-              li.active
-                a(href='/') Home
-              li
-                a(href='/account') Account
-              li
-                a(href='/logout') Log Out
+            
+              if route === 'home'
+                li.active
+                  a(href='/') Home
+              else
+                li
+                  a(href='/') Home
+                
+              if route === 'account'
+                li.active
+                  a(href='/account') Account
+              else
+                li
+                  a(href='/account') Account
+              
+              if route === 'logout'
+                li.active
+                  a(href='/logout') Log Out
+              else
+                li
+                  a(href='/logout') Log Out
             else
-              li
-                a(href='/login') Log In
-              li
-                a(href='/register') Register
+            
+              if route === 'login'
+                li.active
+                  a(href='/login') Log In
+              else
+                li
+                  a(href='/login') Log In
+              
+              if route === 'register'
+                li.active
+                  a(href='/register') Register
+              else
+                li
+                  a(href='/register') Register
 
     block content
