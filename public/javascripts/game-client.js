@@ -39,6 +39,8 @@ var DARK_COLOR = '#b58863';
 var FROM_COLOR = '#9cf';
 var TO_COLOR = '#28d';
 
+var shouldRotateBoards = false;
+
 function assert(result, description) {
   if (!result) {
     console.log(description);
@@ -321,7 +323,13 @@ ChessBoard.prototype.makeMove = function(move) {
   displayBoards();
 
   // Send the move to the server
-  var emitMove = this.number + '_' + move;
+  var boardNumber = this.number;
+
+  if (shouldRotateBoards) {
+    boardNumber = 1 - boardNumber;
+  }
+
+  var emitMove = boardNumber + '_' + move;
   socket.emit('make_move', getGameID(), emitMove, username);
   console.log('Sent: ' + emitMove);
   return true;
@@ -492,6 +500,12 @@ $(document).ready(function() {
 
     boards[0].validator = validators[0];
     boards[1].validator = validators[1];
+
+    if (shouldRotateBoards) {
+      boards[0].validator = validators[1];
+      boards[1].validator = validators[0];
+    }
+
     fixPrototypes(boards[0].validator);
     fixPrototypes(boards[1].validator);
     makeLinks();
@@ -509,6 +523,25 @@ $(document).ready(function() {
     }
 
     socket.emit('sit', getGameID(), {position: position, name: username});
+  });
+
+  $('#rotate').click(function(event) {
+    shouldRotateBoards = !shouldRotateBoards;
+
+    // Swap the two validators and re-display the boards
+    var temp = boards[0].validator;
+    boards[0].validator = boards[1].validator;
+    boards[1].validator = temp;
+    displayBoards();
+
+    // Swap the sitting names
+    temp = $('#sit0_W').val();
+    $('#sit0_W').val($('#sit1_W').val());
+    $('#sit1_W').val(temp);
+
+    temp = $('#sit0_B').val();
+    $('#sit0_B').val($('#sit1_B').val());
+    $('#sit1_B').val(temp);
   });
 
   socket.on('sit', function(data) {
