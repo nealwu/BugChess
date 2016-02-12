@@ -217,7 +217,10 @@ io.sockets.on('connection', function(socket) {
       }
 
       if (gameID === -1) {
-        gameIDs.sort();
+        // Sort numerically
+        gameIDs.sort(function(a, b) {
+          return a - b;
+        });
 
         for (var i = 0; i < gameIDs.length; i++) {
           if (gameIDs[i] !== i) {
