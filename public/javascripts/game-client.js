@@ -33,8 +33,8 @@ var EMPTY2 = EMPTY + EMPTY;
 var BANK_ORDER = [QUEEN, ROOK, BISHOP, KNIGHT, PAWN];
 var BANK_FONT_SIZE = 24;
 
-var LIGHT_COLOR = '#f0d9b5';
-var DARK_COLOR = '#b58863';
+var LIGHT_COLOR = 'rgba(177, 63, 68, 0.5)';
+var DARK_COLOR = 'rgba(0,0,0,0.5)';
 
 var FROM_COLOR = '#9cf';
 var TO_COLOR = '#28d';
