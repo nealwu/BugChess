@@ -38,6 +38,7 @@ var DARK_COLOR = '#b58863';
 
 var FROM_COLOR = '#9cf';
 var TO_COLOR = '#28d';
+var MOVE_OPTIONS_COLOR = '#28d';
 
 var shouldRotateBoards = false;
 
@@ -379,7 +380,7 @@ ChessBoard.pieceStart = function(x, y, event) {
     if (move.substring(2, 4) === square) {
       var toSquare = move.substring(5, 7);
       var toCoords = this.paper.chessBoard.squareToCoordinates(toSquare);
-      this.paper.chessBoard.boardSquares[toCoords[0]][toCoords[1]].attr('fill', TO_COLOR);
+      this.paper.chessBoard.boardSquares[toCoords[0]][toCoords[1]].attr('fill', MOVE_OPTIONS_COLOR);
     }
   }
 };
