@@ -322,6 +322,11 @@ ChessBoard.prototype.makeMove = function(move) {
     return false;
   }
 
+  if ($('#sit0_W').val() === 'Sit!' || $('#sit0_B').val() === 'Sit!' || $('#sit1_W').val() === 'Sit!' || $('#sit1_B').val() === 'Sit!') {
+    console.log('Not all seats have been taken yet');
+    return false;
+  }
+
   if (!this.validator.isLegalMove(move)) {
     return false;
   }

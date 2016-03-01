@@ -157,6 +157,11 @@ io.sockets.on('connection', function(socket) {
         return;
       }
 
+      if (Object.keys(game_seat_to_socket[gameID]).length !== 4) {
+        console.log('This game does not have all four seats taken');
+        return;
+      }
+
       if (!validators[number].makeMove(move)) {
         console.log('Illegal move!');
         return;
