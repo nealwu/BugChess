@@ -34,7 +34,7 @@ app.use(expressSession({
 }));
 app.use(flash());
 
-passport = require('./routes/middlewares/users');
+var passport = require('./routes/middlewares/passport-setup');
 app.use(passport.initialize());
 app.use(passport.session());
 

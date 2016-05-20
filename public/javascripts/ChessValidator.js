@@ -1001,7 +1001,16 @@ function fixPrototypes(validator) {
   validator.timers[BLACK].__proto__ = Timer.prototype;
 }
 
-var exports = {ChessValidator: ChessValidator, fixPrototypes: fixPrototypes};
+function makeLinks(validator0, validator1) {
+  validator0.otherValidator = validator1;
+  validator1.otherValidator = validator0;
+}
+
+function killLinks(validator0, validator1) {
+  validator0.otherValidator = validator1.otherValidator = null;
+}
+
+var exports = {ChessValidator: ChessValidator, fixPrototypes: fixPrototypes, makeLinks: makeLinks, killLinks: killLinks};
 
 // Hack: will only be true if on the server
 if (typeof module !== 'undefined') {

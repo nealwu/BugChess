@@ -1,5 +1,6 @@
 var io = require('socket.io').listen();
-var db = require('mongojs')('bughouse', ['games', 'users']);
+var db = require('./db');
+var ChessValidatorJS = require('./public/javascripts/ChessValidator');
 
 // io.configure(function() {
 //     io.set('transports', ['xhr-polling']);
@@ -7,103 +8,46 @@ var db = require('mongojs')('bughouse', ['games', 'users']);
 // });
 
 var PRIVATE_ID = 1000000;
-
 var GAME_PREFIX = 'game';
-
-var ChessValidatorJS = require('./public/javascripts/ChessValidator');
-var ChessValidator = ChessValidatorJS.ChessValidator;
-var fixPrototypes = ChessValidatorJS.fixPrototypes;
-
-function makeLinks(validators) {
-  validators[0].otherValidator = validators[1];
-  validators[1].otherValidator = validators[0];
-}
-
-function killLinks(validators) {
-  validators[0].otherValidator = validators[1].otherValidator = null;
-}
 
 function sendUpdate(gameID, validators) {
   console.log('Updating game ' + gameID);
-  killLinks(validators);
+
+  // Killing the links between the two validators is necessary so that when socket.io tries to convert them to JSON objects, there isn't a cycle
+  ChessValidatorJS.killLinks(validators[0], validators[1]);
   io.sockets.in(GAME_PREFIX + gameID).emit('update', validators);
-  makeLinks(validators);
+  ChessValidatorJS.makeLinks(validators[0], validators[1]);
 }
 
-function doesGameExist(gameID, callback) {
-  db.games.find({gameID: gameID}, function(error, docs) {
-    callback(!error && docs && docs.length > 0);
-  });
-}
-
-function doesUserExist(username, callback) {
-  db.users.find({username: username}, function(error, docs) {
-    callback(!error && docs && docs.length > 0);
-  });
-}
-
-function saveGame(gameID, validators, started) {
-  doesGameExist(gameID, function(exists) {
-    killLinks(validators);
-
-    if (exists) {
-      db.games.update({gameID: gameID}, {$set: {game: JSON.stringify(validators), started: started}});
-    } else {
-      db.games.save({gameID: gameID, game: JSON.stringify(validators), started: started});
-    }
-
-    makeLinks(validators);
-  });
-}
-
-function loadGame(gameID, callback) {
-  db.games.find({gameID: gameID}, function(error, docs) {
-    var validators;
-
-    // If there's a game, try to load it
-    if (!error && docs && docs.length > 0) {
-      console.log('Found game ' + gameID + ' in DB! Loading...');
-      validators = JSON.parse(docs[0].game);
-      fixPrototypes(validators[0]);
-      fixPrototypes(validators[1]);
-      makeLinks(validators);
-    } else {
-      console.log('Game ' + gameID + ' not found in DB! Creating new game...');
-      validators = [new ChessValidator(), new ChessValidator()];
-      saveGame(gameID, validators, false);
-    }
-
-    callback(validators);
-  });
-}
-
-//Socket.io stuff
-var game_seat_to_socket = {};
-var game_seat_to_name = {};
+// Socket.io stuff
+var gameSeatToSocket = {};
+var gameSeatToName = {};
 
 function socketSit(socketID, gameID, position, name) {
-  if (!game_seat_to_socket[gameID]) {
-    game_seat_to_socket[gameID] = {};
-    game_seat_to_name[gameID] = {};
+  if (!gameSeatToSocket[gameID]) {
+    gameSeatToSocket[gameID] = {};
+    gameSeatToName[gameID] = {};
   }
 
   // Can't sit in already taken seat
-  if (game_seat_to_socket[gameID][position]) {
+  if (gameSeatToSocket[gameID][position]) {
     return false;
   }
 
-  game_seat_to_socket[gameID][position] = socketID;
-  game_seat_to_name[gameID][position] = name;
+  gameSeatToSocket[gameID][position] = socketID;
+  gameSeatToName[gameID][position] = name;
   return true;
 }
 
 function socketPermission(socketID, gameID, position, name) {
-  if (game_seat_to_socket[gameID] === undefined || game_seat_to_name[gameID] === undefined) {
+  if (gameSeatToSocket[gameID] === undefined || gameSeatToName[gameID] === undefined) {
     return false;
   }
 
-  return game_seat_to_socket[gameID][position] === socketID || game_seat_to_name[gameID][position] === name;
+  return gameSeatToSocket[gameID][position] === socketID || gameSeatToName[gameID][position] === name;
 }
+
+db.ensureIndices();
 
 io.sockets.on('connection', function(socket) {
   socket.on('start_game', function(gameID) {
@@ -115,13 +59,13 @@ io.sockets.on('connection', function(socket) {
     console.log('This is ' + socket.id);
     socket.join(GAME_PREFIX + gameID);
 
-    loadGame(gameID, function(validators) {
+    db.loadGame(gameID, function(validators) {
       sendUpdate(gameID, validators);
     });
 
-    if (game_seat_to_socket[gameID]) {
-      var seat_to_socket = game_seat_to_socket[gameID];
-      var seat_to_name = game_seat_to_name[gameID];
+    if (gameSeatToSocket[gameID]) {
+      var seat_to_socket = gameSeatToSocket[gameID];
+      var seat_to_name = gameSeatToName[gameID];
 
       for (var position in seat_to_socket) {
         var socketID = seat_to_socket[position];
@@ -135,7 +79,7 @@ io.sockets.on('connection', function(socket) {
     console.log('ID: ' + socket.id);
     console.log('Make move in game ' + gameID);
 
-    loadGame(gameID, function(validators) {
+    db.loadGame(gameID, function(validators) {
       if (!move) {
         console.log('No move received!');
         return;
@@ -157,7 +101,7 @@ io.sockets.on('connection', function(socket) {
         return;
       }
 
-      if (Object.keys(game_seat_to_socket[gameID]).length !== 4) {
+      if (Object.keys(gameSeatToSocket[gameID]).length !== 4) {
         console.log('This game does not have all four seats taken');
         return;
       }
@@ -168,7 +112,7 @@ io.sockets.on('connection', function(socket) {
       }
 
       console.log('Legal move!');
-      saveGame(gameID, validators, true);
+      db.saveGame(gameID, validators, true);
       sendUpdate(gameID, validators);
     });
   });
@@ -178,7 +122,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('get_games', function() {
-    db.games.find(function(error, docs) {
+    db.getAllGames(function(error, docs) {
       if (!error && docs) {
         socket.emit('games', docs);
       }
@@ -207,7 +151,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('new_public_game', function() {
-    db.games.find(function(error, docs) {
+    db.getAllGames(function(error, docs) {
       var gameID = -1;
       var gameIDs = [];
 

@@ -1,5 +1,5 @@
 var router = require('express').Router();
-var passport = require('./middlewares/users');
+var passport = require('./middlewares/passport-setup');
 
 router.get('/login', function(req, res) {
   var message = req.flash('message') + req.flash('error');
@@ -23,12 +23,12 @@ router.get('/login', function(req, res) {
 //
 //   curl -v -d "username=bob&password=secret" http://127.0.0.1:3000/login
 router.post('/login', passport.authenticate('local', {
-  failureRedirect: '/login',
-  failureFlash: 'Invalid username or password.'
-}),
-function(req, res) {
-  res.redirect('/');
-}
+    failureRedirect: '/login',
+    failureFlash: 'Invalid username or password.'
+  }),
+  function(req, res) {
+    res.redirect('/');
+  }
 );
 
 module.exports = router;

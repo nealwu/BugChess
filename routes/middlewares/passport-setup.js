@@ -1,29 +1,6 @@
-var passport = require('passport')
+var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
-var db = require('mongojs')('bughouse', ['games', 'users']);
-
-db.users.ensureIndex({username: 1}, {unique: true});
-db.users.ensureIndex({email: 1}, {unique: true});
-
-function findByUsername(username, fn) {
-  db.users.find({username: username}, function(error, docs) {
-    if (!error && docs && docs.length > 0) {
-      fn(null, docs[0]);
-    } else {
-      fn(null, null);
-    }
-  });
-}
-
-function findByEmail(email, fn) {
-  db.users.find({email: email}, function(error, docs) {
-    if (!error && docs && docs.length > 0) {
-      fn(null, docs[0]);
-    } else {
-      fn(null, null);
-    }
-  });
-}
+var db = require('../../db');
 
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
@@ -35,7 +12,7 @@ passport.serializeUser(function(user, done) {
 });
 
 passport.deserializeUser(function(username, done) {
-  findByUsername(username, function(err, user) {
+  db.findByUsername(username, function(err, user) {
     done(err, user);
   });
 });
@@ -53,20 +30,19 @@ passport.use(new LocalStrategy(
       // username, or the password is not correct, set the user to `false` to
       // indicate failure and set a flash message.  Otherwise, return the
       // authenticated `user`.
-      findByUsername(username, function(err, user) {
+      db.findByUsername(username, function(err, user) {
         if (err) {
           return done(err);
         } else if (!user) {
-          return done(null, false,
-            {message: 'Unknown user ' + username + '!'});
-          } else if (user.password !== password) {
-            return done(null, false, {message: 'Invalid password!'});
-          } else {
-            return done(null, user);
-          }
-        });
+          return done(null, false, {message: 'Unknown user ' + username + '!'});
+        } else if (user.password !== password) {
+          return done(null, false, {message: 'Invalid password!'});
+        } else {
+          return done(null, user);
+        }
       });
-    }
-  ));
+    });
+  }
+));
 
-  module.exports = passport;
+module.exports = passport;

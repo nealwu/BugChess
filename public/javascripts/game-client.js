@@ -1,4 +1,4 @@
-/* globals console, alert, Timer, $, ChessValidator, Raphael, STARTING_BOARD, io, fixPrototypes */
+/* globals console, alert, Timer, $, ChessValidator, Raphael, STARTING_BOARD, io, fixPrototypes, makeLinks */
 
 var MAX_CHATS = 15;
 
@@ -469,11 +469,6 @@ ChessBoard.bankEnd = function(event) {
   this.remove();
 };
 
-function makeLinks() {
-  boards[0].validator.otherValidator = boards[1].validator;
-  boards[1].validator.otherValidator = boards[0].validator;
-}
-
 var checkmated = false;
 
 function displayBoards() {
@@ -530,7 +525,7 @@ $(document).ready(function() {
 
     fixPrototypes(boards[0].validator);
     fixPrototypes(boards[1].validator);
-    makeLinks();
+    makeLinks(boards[0].validator, boards[1].validator);
     displayBoards();
   });
 
