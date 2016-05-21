@@ -34,6 +34,20 @@ function socketSit(socketID, gameID, position, name) {
     return false;
   }
 
+  // Can't sit if you're already sitting on the other team
+  var otherBoard = position[0] === '0' ? '1' : '0';
+  var otherSide = position[2] === 'W' ? 'B' : 'W';
+  var otherTeam1 = otherBoard + '_' + position[2];
+  var otherTeam2 = position[0] + '_' + otherSide;
+
+  if (gameSeatToSocket[gameID][otherTeam1] === socketID || gameSeatToName[gameID][otherTeam1] === name) {
+    return false;
+  }
+
+  if (gameSeatToSocket[gameID][otherTeam2] === socketID || gameSeatToName[gameID][otherTeam2] === name) {
+    return false;
+  }
+
   gameSeatToSocket[gameID][position] = socketID;
   gameSeatToName[gameID][position] = name;
   return true;
@@ -64,12 +78,12 @@ io.sockets.on('connection', function(socket) {
     });
 
     if (gameSeatToSocket[gameID]) {
-      var seat_to_socket = gameSeatToSocket[gameID];
-      var seat_to_name = gameSeatToName[gameID];
+      var seatToSocket = gameSeatToSocket[gameID];
+      var seatToName = gameSeatToName[gameID];
 
-      for (var position in seat_to_socket) {
-        var socketID = seat_to_socket[position];
-        var name = seat_to_name[position];
+      for (var position in seatToSocket) {
+        var socketID = seatToSocket[position];
+        var name = seatToName[position];
         socket.emit('sit', {socketID: socketID, position: position, name: name});
       }
     }

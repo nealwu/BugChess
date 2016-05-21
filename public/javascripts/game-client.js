@@ -498,14 +498,13 @@ function getGameID() {
   return parseInt(document.URL.substring(document.URL.lastIndexOf('/') + 1));
 }
 
-var socket, boards = [], seat_to_socket = {}, username = '';
+var socket, boards = [], username = '';
 
 $(document).ready(function() {
   // Set up socket.io
   socket = io.connect();
 
   if (username === '') {
-    // name = prompt('What is your name?');
     username = $('#username').text();
   }
 
@@ -539,7 +538,6 @@ $(document).ready(function() {
     }
 
     if (username === '') {
-      // name = prompt('What is your name?');
       username = $('#username').text();
     }
 
@@ -549,7 +547,7 @@ $(document).ready(function() {
   $('#rotate').click(function(event) {
     shouldRotateBoards = !shouldRotateBoards;
 
-    // Swap the two validators and unrotatedNumber's and re-display the boards
+    // Swap the two validators and unrotatedNumbers and re-display the boards
     var temp = boards[0].validator;
     boards[0].validator = boards[1].validator;
     boards[1].validator = temp;
@@ -576,10 +574,16 @@ $(document).ready(function() {
     var name = data.name;
 
     $('#sit' + position).val(name);
-    seat_to_socket[position] = socketID;
 
-    if (socketID === socket.id) {
+    if (name === username) {
+      // This is us
       $('#sit' + position).css('font-weight', 'bold');
+
+      // Hide the sit buttons for the other team: flip the board and then the position
+      var otherBoard = position[0] === '0' ? '1' : '0';
+      var otherSide = position[2] === 'W' ? 'B' : 'W';
+      $('#sit' + otherBoard + '_' + position[2]).hide();
+      $('#sit' + position[0] + '_' + otherSide).hide();
     }
   });
 
