@@ -1,0 +1,5 @@
+x Notes to self for adding chats to the DB:
+x Save just chats to the DB if there is no game yet in the DB
+x If there is a game, use update to set only the chats
+x When loading the page (game-client.js), load the chats so that they stay there on first load / refresh
+x Make sure the db.js interface still makes sense when working with the chats

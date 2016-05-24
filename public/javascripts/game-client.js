@@ -498,6 +498,15 @@ function getGameID() {
   return parseInt(document.URL.substring(document.URL.lastIndexOf('/') + 1));
 }
 
+function hourAMPM(hour) {
+  var ampm = hour < 12 ? 'am' : 'pm';
+  return [(hour + 11) % 12 + 1, ampm];
+}
+
+function padOnce(number) {
+  return parseInt(number) < 10 ? '0' + number : number;
+}
+
 var socket, boards = [], username = '';
 
 $(document).ready(function() {
@@ -527,8 +536,6 @@ $(document).ready(function() {
     makeLinks(boards[0].validator, boards[1].validator);
     displayBoards();
   });
-
-  socket.emit('start_game', getGameID());
 
   $('.sit_button').click(function(event) {
     var position = this.id.substring(this.id.length - 3);
@@ -594,19 +601,10 @@ $(document).ready(function() {
     }
   });
 
-  function hourAMPM(hour) {
-    var ampm = hour < 12 ? 'am' : 'pm';
-    return [(hour + 11) % 12 + 1, ampm];
-  }
-
-  function padOnce(number) {
-    return parseInt(number) < 10 ? '0' + number : number;
-  }
-
-  socket.on('chat', function(username, message) {
-    var date = new Date();
-    var h = hourAMPM(date.getHours());
-    var time = h[0] + ':' + padOnce(date.getMinutes()) + ':' + padOnce(date.getSeconds()) + ' ' + h[1];
+  socket.on('chat', function(username, date, message) {
+    var dateObj = new Date(date);
+    var h = hourAMPM(dateObj.getHours());
+    var time = h[0] + ':' + padOnce(dateObj.getMinutes()) + ':' + padOnce(dateObj.getSeconds()) + ' ' + h[1];
 
     $('#chats').append($('<p class="chat">').html('[' + time + '] <strong>' + username + '</strong>: ' + message));
 
@@ -616,4 +614,6 @@ $(document).ready(function() {
       chatsChildren[0].remove();
     }
   });
+
+  socket.emit('connect_to_game', getGameID());
 });

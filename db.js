@@ -61,13 +61,24 @@ function saveGame(gameID, validators, started) {
     if (exists) {
       db.games.update({gameID: gameID}, {$set: {game: JSON.stringify(validators), started: started}});
     } else {
-      db.games.save({gameID: gameID, game: JSON.stringify(validators), started: started});
+      db.games.save({gameID: gameID, game: JSON.stringify(validators), started: started, chats: []});
     }
 
     ChessValidatorJS.makeLinks(validators[0], validators[1]);
   });
 }
 module.exports.saveGame = saveGame;
+
+function updateChats(gameID, chats) {
+  doesGameExist(gameID, function(exists) {
+    if (exists) {
+      db.games.update({gameID: gameID}, {$set: {chats: chats}});
+    } else {
+      db.games.save({gameID: gameID, chats: chats});
+    }
+  });
+}
+module.exports.updateChats = updateChats;
 
 function loadGame(gameID, callback) {
   db.games.find({gameID: gameID}, function(error, docs) {

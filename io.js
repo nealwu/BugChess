@@ -23,6 +23,8 @@ function sendUpdate(gameID, validators) {
 var gameSeatToSocket = {};
 var gameSeatToName = {};
 
+var chatsForGame = {};
+
 function socketSit(socketID, gameID, position, name) {
   if (!gameSeatToSocket[gameID]) {
     gameSeatToSocket[gameID] = {};
@@ -64,7 +66,7 @@ function socketPermission(socketID, gameID, position, name) {
 db.ensureIndices();
 
 io.sockets.on('connection', function(socket) {
-  socket.on('start_game', function(gameID) {
+  socket.on('connect_to_game', function(gameID) {
     if (isNaN(gameID)) {
       console.log('Invalid gameID in URL! Setting to 0...');
       gameID = 0;
@@ -85,6 +87,13 @@ io.sockets.on('connection', function(socket) {
         var socketID = seatToSocket[position];
         var name = seatToName[position];
         socket.emit('sit', {socketID: socketID, position: position, name: name});
+      }
+    }
+
+    if (gameID in chatsForGame) {
+      for (var i = 0; i < chatsForGame[gameID].length; i++) {
+        var chatObj = chatsForGame[gameID][i];
+        socket.emit('chat', chatObj.username, chatObj.date, chatObj.message);
       }
     }
   });
@@ -161,7 +170,15 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('chat', function(gameID, username, message) {
-    io.sockets.in(GAME_PREFIX + gameID).emit('chat', username, message);
+    var date = new Date();
+
+    if (!(gameID in chatsForGame)) {
+      chatsForGame[gameID] = [];
+    }
+
+    chatsForGame[gameID].push({username: username, date: date.getTime(), message: message});
+    io.sockets.in(GAME_PREFIX + gameID).emit('chat', username, date.getTime(), message);
+    db.updateChats(gameID, chatsForGame[gameID]);
   });
 
   socket.on('new_public_game', function() {
