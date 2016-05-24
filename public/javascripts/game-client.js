@@ -495,7 +495,7 @@ function stopTimers() {
 }
 
 function getGameID() {
-  return parseInt(document.URL.substring(document.URL.lastIndexOf('/') + 1));
+  return parseInt(document.URL.match(/\/game\/([0-9]+)/)[1]);
 }
 
 function hourAMPM(hour) {
