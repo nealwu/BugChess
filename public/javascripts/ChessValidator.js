@@ -48,7 +48,7 @@ var STARTING_BOARD = {
   'e8': BLACK + KING,
   'f8': BLACK + BISHOP,
   'g8': BLACK + KNIGHT,
-  'h8': BLACK + ROOK,
+  'h8': BLACK + ROOK
 };
 
 function assert(result, description) {
@@ -310,7 +310,8 @@ ChessValidator.prototype.getPawnAttackingSquares = function(x, y) {
   var dy = color === WHITE ? -1 : +1;
 
   [-1, +1].forEach(function(dx) {
-    var nx = x + dx, ny = y + dy;
+    var nx = x + dx;
+    var ny = y + dy;
 
     if (ChessValidator.areValidCoordinates(nx, ny)) {
       squares.push([nx, ny]);
@@ -328,7 +329,8 @@ ChessValidator.prototype.getKnightAttackingSquares = function(x, y) {
   var dy = [-1, +1, -2, +2, -2, +2, -1, +1];
 
   for (var i in dx) {
-    var nx = x + dx[i], ny = y + dy[i];
+    var nx = x + dx[i];
+    var ny = y + dy[i];
 
     if (ChessValidator.areValidCoordinates(nx, ny)) {
       squares.push([nx, ny]);
@@ -346,7 +348,8 @@ ChessValidator.prototype.getBishopAttackingSquares = function(x, y) {
 
   [-1, +1].forEach(function(dx) {
     [-1, +1].forEach(function(dy) {
-      var nx = x + dx, ny = y + dy;
+      var nx = x + dx;
+      var ny = y + dy;
 
       while (ChessValidator.areValidCoordinates(nx, ny)) {
         squares.push([nx, ny]);
@@ -372,7 +375,8 @@ ChessValidator.prototype.getRookAttackingSquares = function(x, y) {
   var dy = [0, 0, -1, +1];
 
   for (var i in dx) {
-    var nx = x + dx[i], ny = y + dy[i];
+    var nx = x + dx[i];
+    var ny = y + dy[i];
 
     while (ChessValidator.areValidCoordinates(nx, ny)) {
       squares.push([nx, ny]);
@@ -401,7 +405,8 @@ ChessValidator.prototype.getKingAttackingSquares = function(x, y) {
   for (var dx = -1; dx <= +1; dx++) {
     for (var dy = -1; dy <= +1; dy++) {
       if (dx !== 0 || dy !== 0) {
-        var nx = x + dx, ny = y + dy;
+        var nx = x + dx;
+        var ny = y + dy;
 
         if (ChessValidator.areValidCoordinates(nx, ny)) {
           squares.push([nx, ny]);
@@ -937,9 +942,8 @@ ChessValidator.prototype.undoMove = function(previousBoard) {
 ChessValidator.prototype.makeMove = function(move) {
   if (this.isLegalMove(move)) {
     var squares = this.fromAndToSquares(move);
-    var from = squares[0], to = squares[1];
-
-    // TODO: capture and en passant needs to be sent to the other board
+    var from = squares[0];
+    var to = squares[1];
 
     // Check for captures; send the capture to the other board's bank
     if (this.otherValidator !== undefined && isLowerCase(move[2])) {

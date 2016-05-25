@@ -82,7 +82,7 @@ module.exports.updateChats = updateChats;
 
 function loadGame(gameID, callback) {
   db.games.find({gameID: gameID}, function(error, docs) {
-    var validators;
+    var validators = null;
 
     // If there's a game, try to load it
     if (!error && docs && docs.length > 0) {

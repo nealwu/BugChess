@@ -1,16 +1,16 @@
 /* globals require, console, process, __dirname */
 
-var flash          = require('connect-flash'),
-    express        = require('express'),
-    expressSession = require('express-session'),
-    path           = require('path'),
-    // favicon        = require('serve-favicon'),
-    logger         = require('morgan'),
-    cookieParser   = require('cookie-parser'),
-    bodyParser     = require('body-parser'),
-    methodOverride = require('method-override'),
-    errorHandler   = require('errorhandler'),
-    app            = express();
+var flash = require('connect-flash');
+var express = require('express');
+var expressSession = require('express-session');
+var path = require('path');
+// var favicon = require('serve-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var methodOverride = require('method-override');
+var errorHandler = require('errorhandler');
+var app = express();
 
 var env = process.env.NODE_ENV || 'development';
 
@@ -20,7 +20,7 @@ if (env === 'development') {
   app.locals.pretty = true;
 }
 
-app.set('views', __dirname + '/views');
+app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 // app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(bodyParser.json());

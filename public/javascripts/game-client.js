@@ -3,7 +3,7 @@
 var MAX_CHATS = 15;
 
 var BOARD_SIZE = 8;
-var SQUARE_PIXELS;
+var SQUARE_PIXELS = 0;
 
 if (navigator.userAgent.indexOf('iPhone') !== -1 || navigator.userAgent.indexOf('iPad') !== -1) {
   SQUARE_PIXELS = 45;
@@ -41,11 +41,53 @@ var TO_COLOR = '#28d';
 
 var shouldRotateBoards = false;
 
+// Game state variables
+var socket = null;
+var boards = [];
+var username = '';
+var checkmated = false;
+
 function assert(result, description) {
   if (!result) {
     console.log(description);
     alert(description);
   }
+}
+
+function stopTimers() {
+  window.clearInterval(boards[0].timerInterval);
+  window.clearInterval(boards[1].timerInterval);
+}
+
+function getGameID() {
+  return parseInt(document.URL.match(/\/game\/([0-9]+)/)[1]);
+}
+
+function hourAMPM(hour) {
+  var ampm = hour < 12 ? 'am' : 'pm';
+  return [(hour + 11) % 12 + 1, ampm];
+}
+
+function padOnce(number) {
+  return parseInt(number) < 10 ? '0' + number : number;
+}
+
+function displayBoards() {
+  boards[0].getBoardFromValidator();
+  boards[1].getBoardFromValidator();
+
+  // Hack; raphael's image function doesn't have callback
+  window.setTimeout(function() {
+    if (!checkmated && boards[0].validator.isCheckmate()) {
+      alert('Checkmate on left board!');
+      checkmated = true;
+    }
+
+    if (!checkmated && boards[1].validator.isCheckmate()) {
+      alert('Checkmate on right board!');
+      checkmated = true;
+    }
+  }, 1000);
 }
 
 function DisplayTimer(initial, id) {
@@ -151,13 +193,13 @@ ChessBoard.prototype.changeBank = function(player, piece, count) {
   assert(this.bank[player][piece] !== undefined, 'ChessBoard.changeBank called before bank was initialized');
 
   var text = this.bank[player][piece][1];
-  var textX = text.attr('x'), textY = text.attr('y');
+  var textX = text.attr('x');
+  var textY = text.attr('y');
   text.remove();
   text = this.raphael.text(textX, textY, ': ' + count).attr('font-size', BANK_FONT_SIZE);
   this.bank[player][piece][1] = text;
   this.bank[player][piece][2] = count;
 
-  // TODO: make this do bold instead; also learn how to reset the text of the text object without replacing the whole object
   if (count > 0) {
     text.attr('fill', 'green').attr('font-weight', 'bold');
   }
@@ -370,7 +412,8 @@ ChessBoard.pieceStart = function(x, y, event) {
   this.data('originalX', this.attr('x'));
   this.data('originalY', this.attr('y'));
 
-  var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
+  var centerX = this.attr('x') + PIECE_PIXELS / 2;
+  var centerY = this.attr('y') + PIECE_PIXELS / 2;
   var coords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
   this.paper.chessBoard.defaultSquareColors();
   this.paper.chessBoard.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
@@ -396,7 +439,8 @@ ChessBoard.pieceMove = function(dx, dy, x, y, event) {
 
 ChessBoard.pieceEnd = function(event) {
   // Get the coordinates of the piece's center
-  var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
+  var centerX = this.attr('x') + PIECE_PIXELS / 2;
+  var centerY = this.attr('y') + PIECE_PIXELS / 2;
   var toSquare = this.paper.chessBoard.pixelsToSquare(centerX, centerY);
   var toCoords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
   var fromSquare = this.data('square');
@@ -452,7 +496,8 @@ ChessBoard.bankEnd = function(event) {
   var count = this.paper.chessBoard.bank[player][piece][2];
 
   // Get the coordinates of the piece's center
-  var centerX = this.attr('x') + PIECE_PIXELS / 2, centerY = this.attr('y') + PIECE_PIXELS / 2;
+  var centerX = this.attr('x') + PIECE_PIXELS / 2;
+  var centerY = this.attr('y') + PIECE_PIXELS / 2;
   var toSquare = this.paper.chessBoard.pixelsToSquare(centerX, centerY);
   var toCoords = this.paper.chessBoard.pixelsToCoordinates(centerX, centerY);
   var move = player + '_' + piece + toSquare;
@@ -468,46 +513,6 @@ ChessBoard.bankEnd = function(event) {
 
   this.remove();
 };
-
-var checkmated = false;
-
-function displayBoards() {
-  boards[0].getBoardFromValidator();
-  boards[1].getBoardFromValidator();
-
-  // Hack; raphael's image function doesn't have callback
-  window.setTimeout(function() {
-    if (!checkmated && boards[0].validator.isCheckmate()) {
-      alert('Checkmate on left board!');
-      checkmated = true;
-    }
-
-    if (!checkmated && boards[1].validator.isCheckmate()) {
-      alert('Checkmate on right board!');
-      checkmated = true;
-    }
-  }, 1000);
-}
-
-function stopTimers() {
-  window.clearInterval(boards[0].timerInterval);
-  window.clearInterval(boards[1].timerInterval);
-}
-
-function getGameID() {
-  return parseInt(document.URL.match(/\/game\/([0-9]+)/)[1]);
-}
-
-function hourAMPM(hour) {
-  var ampm = hour < 12 ? 'am' : 'pm';
-  return [(hour + 11) % 12 + 1, ampm];
-}
-
-function padOnce(number) {
-  return parseInt(number) < 10 ? '0' + number : number;
-}
-
-var socket, boards = [], username = '';
 
 $(document).ready(function() {
   // Set up socket.io
@@ -576,7 +581,6 @@ $(document).ready(function() {
   });
 
   socket.on('sit', function(data) {
-    var socketID = data.socketID;
     var position = data.position;
     var name = data.name;
 
@@ -601,12 +605,12 @@ $(document).ready(function() {
     }
   });
 
-  socket.on('chat', function(username, date, message) {
+  socket.on('chat', function(name, date, message) {
     var dateObj = new Date(date);
     var h = hourAMPM(dateObj.getHours());
     var time = h[0] + ':' + padOnce(dateObj.getMinutes()) + ':' + padOnce(dateObj.getSeconds()) + ' ' + h[1];
 
-    $('#chats').append($('<p class="chat">').html('[' + time + '] <strong>' + username + '</strong>: ' + message));
+    $('#chats').append($('<p class="chat">').html('[' + time + '] <strong>' + name + '</strong>: ' + message));
 
     var chatsChildren = $('#chats').children();
 

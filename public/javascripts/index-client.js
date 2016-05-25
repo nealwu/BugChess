@@ -10,7 +10,7 @@ function reverse(list) {
   }
 }
 
-var socket;
+var socket = null;
 
 $(document).ready(function() {
   // Set up socket.io
@@ -22,8 +22,8 @@ $(document).ready(function() {
     docs.forEach(function(doc) {
       var gameID = doc.gameID;
       var link = $('<a>').attr('href', document.URL + 'game/' + gameID).html('Game ' + gameID);
-      var link_div = $('<div>').append(link);
-      $('#games').append(link_div);
+      var linkDiv = $('<div>').append(link);
+      $('#games').append(linkDiv);
     });
   });
 
