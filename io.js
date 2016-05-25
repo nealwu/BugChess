@@ -19,20 +19,16 @@ function sendUpdate(gameID, validators) {
   ChessValidatorJS.makeLinks(validators[0], validators[1]);
 }
 
-// Socket.io stuff
-var gameSeatToSocket = {};
 var gameSeatToName = {};
-
 var chatsForGame = {};
 
 function socketSit(socketID, gameID, position, name) {
-  if (!gameSeatToSocket[gameID]) {
-    gameSeatToSocket[gameID] = {};
+  if (!(gameID in gameSeatToName)) {
     gameSeatToName[gameID] = {};
   }
 
   // Can't sit in already taken seat
-  if (gameSeatToSocket[gameID][position]) {
+  if (position in gameSeatToName[gameID]) {
     return false;
   }
 
@@ -42,25 +38,20 @@ function socketSit(socketID, gameID, position, name) {
   var otherTeam1 = otherBoard + '_' + position[2];
   var otherTeam2 = position[0] + '_' + otherSide;
 
-  if (gameSeatToSocket[gameID][otherTeam1] === socketID || gameSeatToName[gameID][otherTeam1] === name) {
+  if (gameSeatToName[gameID][otherTeam1] === name) {
     return false;
   }
 
-  if (gameSeatToSocket[gameID][otherTeam2] === socketID || gameSeatToName[gameID][otherTeam2] === name) {
+  if (gameSeatToName[gameID][otherTeam2] === name) {
     return false;
   }
 
-  gameSeatToSocket[gameID][position] = socketID;
   gameSeatToName[gameID][position] = name;
   return true;
 }
 
 function socketPermission(socketID, gameID, position, name) {
-  if (gameSeatToSocket[gameID] === undefined || gameSeatToName[gameID] === undefined) {
-    return false;
-  }
-
-  return gameSeatToSocket[gameID][position] === socketID || gameSeatToName[gameID][position] === name;
+  return gameID in gameSeatToName && gameSeatToName[gameID][position] === name;
 }
 
 db.ensureIndices();
@@ -79,14 +70,12 @@ io.sockets.on('connection', function(socket) {
       sendUpdate(gameID, validators);
     });
 
-    if (gameSeatToSocket[gameID]) {
-      var seatToSocket = gameSeatToSocket[gameID];
+    if (gameID in gameSeatToName) {
       var seatToName = gameSeatToName[gameID];
 
       for (var position in seatToSocket) {
-        var socketID = seatToSocket[position];
         var name = seatToName[position];
-        socket.emit('sit', {socketID: socketID, position: position, name: name});
+        socket.emit('sit', {position: position, name: name});
       }
     }
 
@@ -124,7 +113,7 @@ io.sockets.on('connection', function(socket) {
         return;
       }
 
-      if (Object.keys(gameSeatToSocket[gameID]).length !== 4) {
+      if (Object.keys(gameSeatToName[gameID]).length !== 4) {
         console.log('This game does not have all four seats taken');
         return;
       }
