@@ -65,15 +65,6 @@ function getGameID() {
   return parseInt(document.URL.match(/\/game\/([0-9]+)/)[1]);
 }
 
-function hourAMPM(hour) {
-  var ampm = hour < 12 ? 'am' : 'pm';
-  return [(hour + 11) % 12 + 1, ampm];
-}
-
-function padOnce(number) {
-  return parseInt(number) < 10 ? '0' + number : number;
-}
-
 function displayBoards() {
   boards[0].getBoardFromValidator();
   boards[1].getBoardFromValidator();
@@ -83,11 +74,13 @@ function displayBoards() {
     if (!checkmated && boards[0].validator.isCheckmate()) {
       alert('Checkmate on left board!');
       checkmated = true;
+      stopTimers();
     }
 
     if (!checkmated && boards[1].validator.isCheckmate()) {
       alert('Checkmate on right board!');
       checkmated = true;
+      stopTimers();
     }
   }, 1000);
 }
@@ -630,6 +623,15 @@ $(document).ready(function() {
   });
 
   socket.on('chat', function(name, date, message) {
+    function hourAMPM(hour) {
+      var ampm = hour < 12 ? 'am' : 'pm';
+      return [(hour + 11) % 12 + 1, ampm];
+    }
+
+    function padOnce(number) {
+      return parseInt(number) < 10 ? '0' + number : number;
+    }
+
     var dateObj = new Date(date);
     var h = hourAMPM(dateObj.getHours());
     var time = h[0] + ':' + padOnce(dateObj.getMinutes()) + ':' + padOnce(dateObj.getSeconds()) + ' ' + h[1];
