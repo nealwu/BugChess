@@ -72,15 +72,15 @@ function displayBoards() {
   // Hack; raphael's image function doesn't have callback
   window.setTimeout(function() {
     if (!checkmated && boards[0].validator.isCheckmate()) {
-      alert('Checkmate on left board!');
       checkmated = true;
       stopTimers();
+      alert('Checkmate on left board!');
     }
 
     if (!checkmated && boards[1].validator.isCheckmate()) {
-      alert('Checkmate on right board!');
       checkmated = true;
       stopTimers();
+      alert('Checkmate on right board!');
     }
   }, 1000);
 }
@@ -120,6 +120,7 @@ DisplayTimer.prototype.updateTime = function() {
   if (this.outOfTime()) {
     socket.emit('game_over');
     stopTimers();
+    alert('Out of time!');
   }
 };
 
