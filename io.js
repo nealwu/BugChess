@@ -73,7 +73,7 @@ io.sockets.on('connection', function(socket) {
     if (gameID in gameSeatToName) {
       var seatToName = gameSeatToName[gameID];
 
-      for (var position in seatToSocket) {
+      for (var position in seatToName) {
         var name = seatToName[position];
         socket.emit('sit', {position: position, name: name});
       }

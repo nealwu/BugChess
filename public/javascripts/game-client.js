@@ -39,6 +39,8 @@ var DARK_COLOR = '#b58863';
 var FROM_COLOR = '#9cf';
 var TO_COLOR = '#28d';
 
+var SIT_BUTTON_TEXT = 'Sit!';
+
 var shouldRotateBoards = false;
 
 // Game state variables
@@ -364,7 +366,8 @@ ChessBoard.prototype.makeMove = function(move) {
     return false;
   }
 
-  if ($('#sit0_W').val() === 'Sit!' || $('#sit0_B').val() === 'Sit!' || $('#sit1_W').val() === 'Sit!' || $('#sit1_B').val() === 'Sit!') {
+  if ($('#sit0_W').val() === SIT_BUTTON_TEXT || $('#sit0_B').val() === SIT_BUTTON_TEXT ||
+      $('#sit1_W').val() === SIT_BUTTON_TEXT || $('#sit1_B').val() === SIT_BUTTON_TEXT) {
     console.log('Not all seats have been taken yet');
     return false;
   }
@@ -545,6 +548,10 @@ $(document).ready(function() {
   $('.sit_button').click(function(event) {
     var position = this.id.substring(this.id.length - 3);
 
+    if ($(this).val() !== SIT_BUTTON_TEXT) {
+      return;
+    }
+
     if (shouldRotateBoards) {
       position[0] = position[0] === '0' ? '1' : '0';
     }
@@ -584,7 +591,7 @@ $(document).ready(function() {
     var position = data.position;
     var name = data.name;
 
-    $('#sit' + position).val(name);
+    $('#sit' + position).val(name).show();
 
     if (name === username) {
       // This is us
@@ -593,8 +600,16 @@ $(document).ready(function() {
       // Hide the sit buttons for the other team: flip the board and then the position
       var otherBoard = position[0] === '0' ? '1' : '0';
       var otherSide = position[2] === 'W' ? 'B' : 'W';
-      $('#sit' + otherBoard + '_' + position[2]).hide();
-      $('#sit' + position[0] + '_' + otherSide).hide();
+      var button1 = $('#sit' + otherBoard + '_' + position[2]);
+      var button2 = $('#sit' + position[0] + '_' + otherSide);
+
+      if (button1.val() === SIT_BUTTON_TEXT) {
+        button1.hide();
+      }
+
+      if (button2.val() === SIT_BUTTON_TEXT) {
+        button2.hide();
+      }
     }
   });
 
