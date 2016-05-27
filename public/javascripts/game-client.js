@@ -553,6 +553,7 @@ $(document).ready(function() {
   });
 
   $('#rotate').click(function(event) {
+    // On the client we will completely rotate everything, but when we communicate with the server we need to check for shouldRotateBoards
     shouldRotateBoards = !shouldRotateBoards;
 
     // Swap the two validators and re-display the boards
