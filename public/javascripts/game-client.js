@@ -218,7 +218,6 @@ ChessBoard.prototype.defaultSquareColors = function() {
 };
 
 ChessBoard.prototype.initBoard = function() {
-  this.unrotatedNumber = this.number;
   this.bottomPlayer = this.number === 0 ? WHITE : BLACK;
 
   this.raphael = new Raphael('board' + this.number, BOARD_WIDTH, BOARD_HEIGHT);
@@ -381,7 +380,8 @@ ChessBoard.prototype.makeMove = function(move) {
   displayBoards();
 
   // Send the move to the server
-  var emitMove = this.unrotatedNumber + '_' + move;
+  var realBoardNumber = shouldRotateBoards ? 1 - this.number : this.number;
+  var emitMove = realBoardNumber + '_' + move;
   socket.emit('make_move', getGameID(), emitMove, username);
   console.log('Sent: ' + emitMove);
   return true;
@@ -548,16 +548,12 @@ $(document).ready(function() {
   $('.sit_button').click(function(event) {
     var position = this.id.substring(this.id.length - 3);
 
+    if (shouldRotateBoards) {
+      position = (position[0] === '0' ? '1' : '0') + position.substring(1);
+    }
+
     if ($(this).val() !== SIT_BUTTON_TEXT) {
       return;
-    }
-
-    if (shouldRotateBoards) {
-      position[0] = position[0] === '0' ? '1' : '0';
-    }
-
-    if (username === '') {
-      username = $('#username').text();
     }
 
     socket.emit('sit', getGameID(), {position: position, name: username});
@@ -566,30 +562,43 @@ $(document).ready(function() {
   $('#rotate').click(function(event) {
     shouldRotateBoards = !shouldRotateBoards;
 
-    // Swap the two validators and unrotatedNumbers and re-display the boards
+    // Swap the two validators and re-display the boards
     var temp = boards[0].validator;
     boards[0].validator = boards[1].validator;
     boards[1].validator = temp;
-
-    temp = boards[0].unrotatedNumber;
-    boards[0].unrotatedNumber = boards[1].unrotatedNumber;
-    boards[1].unrotatedNumber = temp;
-
     displayBoards();
 
-    // Swap the sitting names
-    temp = $('#sit0_W').val();
-    $('#sit0_W').val($('#sit1_W').val());
-    $('#sit1_W').val(temp);
+    // Swap the sit button contents
+    var copy0_W = $('#sit0_W').clone();
+    var copy1_W = $('#sit1_W').clone();
+    var copy0_B = $('#sit0_B').clone();
+    var copy1_B = $('#sit1_B').clone();
+    $('#sit0_W').val(copy1_W.val());
+    $('#sit1_W').val(copy0_W.val());
+    $('#sit0_B').val(copy1_B.val());
+    $('#sit1_B').val(copy0_B.val());
 
-    temp = $('#sit0_B').val();
-    $('#sit0_B').val($('#sit1_B').val());
-    $('#sit1_B').val(temp);
+    function copyStyle(obj, copyObj) {
+      if (copyObj.attr('style')) {
+        obj.attr('style', copyObj.attr('style'));
+      } else {
+        obj.attr('style', '');
+      }
+    }
+
+    copyStyle($('#sit0_W'), copy1_W);
+    copyStyle($('#sit1_W'), copy0_W);
+    copyStyle($('#sit0_B'), copy1_B);
+    copyStyle($('#sit1_B'), copy0_B);
   });
 
   socket.on('sit', function(data) {
     var position = data.position;
     var name = data.name;
+
+    if (shouldRotateBoards) {
+      position = (position[0] === '0' ? '1' : '0') + position.substring(1);
+    }
 
     $('#sit' + position).val(name).show();
 
@@ -615,7 +624,7 @@ $(document).ready(function() {
 
   $('#chat').keypress(function(event) {
     if (event.which === 13) {
-      socket.emit('chat', getGameID(), $('#username').text(), $('#chat').val());
+      socket.emit('chat', getGameID(), username, $('#chat').val());
       $('#chat').val('');
     }
   });
