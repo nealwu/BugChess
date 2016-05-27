@@ -179,7 +179,7 @@ io.sockets.on('connection', function(socket) {
         docs.forEach(function(doc) {
           gameIDs.push(doc.gameID);
 
-          if (doc.gameID < PRIVATE_ID && !doc.started) {
+          if (doc.gameID < PRIVATE_ID && !doc.started && (gameID === -1 || doc.gameID < gameID)) {
             gameID = doc.gameID;
           }
         });
