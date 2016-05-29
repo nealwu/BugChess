@@ -1,4 +1,4 @@
-var db = require('mongojs')('bughouse', ['games', 'users']);
+var db = require('mongojs')('bugchess', ['games', 'users']);
 var ChessValidatorJS = require('./public/javascripts/ChessValidator');
 var ChessValidator = ChessValidatorJS.ChessValidator;
 
