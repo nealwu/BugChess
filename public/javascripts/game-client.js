@@ -42,6 +42,7 @@ var TO_COLOR = '#28d';
 var SIT_BUTTON_TEXT = 'Sit!';
 
 var shouldRotateBoards = false;
+var alertedOutOfTime = false;
 
 // Game state variables
 var socket = null;
@@ -120,7 +121,11 @@ DisplayTimer.prototype.updateTime = function() {
   if (this.outOfTime()) {
     socket.emit('game_over');
     stopTimers();
-    alert('Out of time!');
+
+    if (!alertedOutOfTime) {
+      alert('Out of time!');
+      alertedOutOfTime = true;
+    }
   }
 };
 
