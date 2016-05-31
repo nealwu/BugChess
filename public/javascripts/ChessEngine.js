@@ -139,11 +139,11 @@ function ChessPiece(name) {
   this.hasMoved = false;
 }
 
-function ChessValidator() {
+function ChessEngine() {
   this.initialize();
 }
 
-ChessValidator.allSquares = function() {
+ChessEngine.allSquares = function() {
   var squares = [];
 
   for (var x = 0; x < BOARD_SIZE; x++) {
@@ -155,32 +155,32 @@ ChessValidator.allSquares = function() {
   return squares;
 };
 
-ChessValidator.areValidCoordinates = function(x, y) {
+ChessEngine.areValidCoordinates = function(x, y) {
   return x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE;
 };
 
-ChessValidator.isValidSquare = function(square) {
+ChessEngine.isValidSquare = function(square) {
   return square.length === 2 && 'a' <= square[0] && square[0] <= 'z' && '1' <= square[1] && square[1] <= '8';
 };
 
-ChessValidator.isValidPiece = function(piece) {
+ChessEngine.isValidPiece = function(piece) {
   assert(piece.length === 1);
   return piece === KING || piece === QUEEN || piece === ROOK || piece === BISHOP || piece === KNIGHT || piece === PAWN;
 };
 
-ChessValidator.isValidPlayer = function(player) {
+ChessEngine.isValidPlayer = function(player) {
   return player === WHITE || player === BLACK;
 };
 
-ChessValidator.isValidName = function(name, empty) {
+ChessEngine.isValidName = function(name, empty) {
   if (empty && name === EMPTY2) {
     return true;
   }
 
-  return name.length === 2 && ChessValidator.isValidPlayer(name[0]) && ChessValidator.isValidPiece(name[1]);
+  return name.length === 2 && ChessEngine.isValidPlayer(name[0]) && ChessEngine.isValidPiece(name[1]);
 };
 
-ChessValidator.prototype.initialize = function() {
+ChessEngine.prototype.initialize = function() {
   // Initialize to empty
   this.board = [];
 
@@ -193,7 +193,7 @@ ChessValidator.prototype.initialize = function() {
 
   var self = this;
 
-  ChessValidator.allSquares().forEach(function(square) {
+  ChessEngine.allSquares().forEach(function(square) {
     self.setPieceAtSquare(square, EMPTY2);
   });
 
@@ -217,7 +217,7 @@ ChessValidator.prototype.initialize = function() {
   this.firstMove = true;
 };
 
-ChessValidator.prototype.bankToString = function(bank) {
+ChessEngine.prototype.bankToString = function(bank) {
   return QUEEN + ':' + bank[QUEEN] + ' ' +
   ROOK + ':' + bank[ROOK] + ' ' +
   BISHOP + ':' + bank[BISHOP] + ' ' +
@@ -225,7 +225,7 @@ ChessValidator.prototype.bankToString = function(bank) {
   PAWN + ':' + bank[PAWN];
 };
 
-ChessValidator.prototype.printBoard = function() {
+ChessEngine.prototype.printBoard = function() {
   console.log(BLACK + ' = ' + this.bankToString(this.bank[BLACK]));
 
   for (var y = 0; y < BOARD_SIZE; y++) {
@@ -243,58 +243,58 @@ ChessValidator.prototype.printBoard = function() {
 
 // Note: square -- 'a1' to 'h8'; coordinates -- x = 0, y = 0 to x = 7, y = 7
 // x increases to the right; y increases down. (0, 0) = 'a8'; (7, 7) = 'h1'
-ChessValidator.prototype.squareToCoordinates = function(square) {
-  assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessValidator.squareToCoordinates: ' + square);
+ChessEngine.prototype.squareToCoordinates = function(square) {
+  assert(ChessEngine.isValidSquare(square), 'Invalid square given to ChessEngine.squareToCoordinates: ' + square);
   var x = square.charCodeAt(0) - 'a'.charCodeAt(0);
   var y = '8'.charCodeAt(0) - square.charCodeAt(1);
   return [x, y];
 };
 
-ChessValidator.prototype.coordinatesToSquare = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.coordinatesToSquare: ' + x + ', ' + y);
+ChessEngine.prototype.coordinatesToSquare = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.coordinatesToSquare: ' + x + ', ' + y);
   return String.fromCharCode(x + 'a'.charCodeAt(0), '8'.charCodeAt(0) - y);
 };
 
-ChessValidator.prototype.isEmptyAtSquare = function(square) {
-  assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessValidator.isEmptyAtSquare: ' + square);
+ChessEngine.prototype.isEmptyAtSquare = function(square) {
+  assert(ChessEngine.isValidSquare(square), 'Invalid square given to ChessEngine.isEmptyAtSquare: ' + square);
   return this.getPieceAtSquare(square).name === EMPTY2;
 };
 
-ChessValidator.prototype.isEmptyAt = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.isEmptyAt: ' + x + ', ' + y);
+ChessEngine.prototype.isEmptyAt = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.isEmptyAt: ' + x + ', ' + y);
   return this.getPieceAt(x, y).name === EMPTY2;
 };
 
-ChessValidator.prototype.getPieceAtSquare = function(square) {
-  assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessValidator.getPieceAtSquare: ' + square);
+ChessEngine.prototype.getPieceAtSquare = function(square) {
+  assert(ChessEngine.isValidSquare(square), 'Invalid square given to ChessEngine.getPieceAtSquare: ' + square);
   var coords = this.squareToCoordinates(square);
   return this.getPieceAt(coords[0], coords[1]);
 };
 
-ChessValidator.prototype.getPieceAt = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.getPieceAt: ' + x + ', ' + y);
+ChessEngine.prototype.getPieceAt = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.getPieceAt: ' + x + ', ' + y);
   return this.board[x][y];
 };
 
-ChessValidator.prototype.setPieceAtSquare = function(square, name) {
-  assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessValidator.setPieceAtSquare: ' + square);
-  assert(ChessValidator.isValidName(name, true), 'Invalid name given to ChessValidator.setPieceAtSquare: ' + name);
+ChessEngine.prototype.setPieceAtSquare = function(square, name) {
+  assert(ChessEngine.isValidSquare(square), 'Invalid square given to ChessEngine.setPieceAtSquare: ' + square);
+  assert(ChessEngine.isValidName(name, true), 'Invalid name given to ChessEngine.setPieceAtSquare: ' + name);
   var coords = this.squareToCoordinates(square);
   this.setPieceAt(coords[0], coords[1], name);
 };
 
-ChessValidator.prototype.setPieceAt = function(x, y, name) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.setPieceAt: ' + x + ', ' + y);
-  assert(ChessValidator.isValidName(name, true), 'Invalid name given to ChessValidator.setPieceAt: ' + name);
+ChessEngine.prototype.setPieceAt = function(x, y, name) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.setPieceAt: ' + x + ', ' + y);
+  assert(ChessEngine.isValidName(name, true), 'Invalid name given to ChessEngine.setPieceAt: ' + name);
 
-  if (ChessValidator.areValidCoordinates(x, y)) {
+  if (ChessEngine.areValidCoordinates(x, y)) {
     this.board[x][y] = new ChessPiece(name);
   }
 };
 
-ChessValidator.prototype.movePieceTo = function(from, to) {
-  assert(ChessValidator.isValidSquare(from), 'Invalid square given to ChessValidator.movePieceTo: ' + from);
-  assert(ChessValidator.isValidSquare(to), 'Invalid square given to ChessValidator.movePieceTo: ' + to);
+ChessEngine.prototype.movePieceTo = function(from, to) {
+  assert(ChessEngine.isValidSquare(from), 'Invalid square given to ChessEngine.movePieceTo: ' + from);
+  assert(ChessEngine.isValidSquare(to), 'Invalid square given to ChessEngine.movePieceTo: ' + to);
 
   var fromCoords = this.squareToCoordinates(from);
   var toCoords = this.squareToCoordinates(to);
@@ -302,8 +302,8 @@ ChessValidator.prototype.movePieceTo = function(from, to) {
   this.setPieceAtSquare(from, EMPTY2);
 };
 
-ChessValidator.prototype.getPawnAttackingSquares = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.getPawnAttackingSquares: ' + x + ', ' + y);
+ChessEngine.prototype.getPawnAttackingSquares = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.getPawnAttackingSquares: ' + x + ', ' + y);
 
   var squares = [];
   var color = this.getPieceAt(x, y).name[0];
@@ -313,7 +313,7 @@ ChessValidator.prototype.getPawnAttackingSquares = function(x, y) {
     var nx = x + dx;
     var ny = y + dy;
 
-    if (ChessValidator.areValidCoordinates(nx, ny)) {
+    if (ChessEngine.areValidCoordinates(nx, ny)) {
       squares.push([nx, ny]);
     }
   });
@@ -321,8 +321,8 @@ ChessValidator.prototype.getPawnAttackingSquares = function(x, y) {
   return squares;
 };
 
-ChessValidator.prototype.getKnightAttackingSquares = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.getKnightAttackingSquares: ' + x + ', ' + y);
+ChessEngine.prototype.getKnightAttackingSquares = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.getKnightAttackingSquares: ' + x + ', ' + y);
 
   var squares = [];
   var dx = [-2, -2, -1, -1, +1, +1, +2, +2];
@@ -332,7 +332,7 @@ ChessValidator.prototype.getKnightAttackingSquares = function(x, y) {
     var nx = x + dx[i];
     var ny = y + dy[i];
 
-    if (ChessValidator.areValidCoordinates(nx, ny)) {
+    if (ChessEngine.areValidCoordinates(nx, ny)) {
       squares.push([nx, ny]);
     }
   }
@@ -340,8 +340,8 @@ ChessValidator.prototype.getKnightAttackingSquares = function(x, y) {
   return squares;
 };
 
-ChessValidator.prototype.getBishopAttackingSquares = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.getBishopAttackingSquares: ' + x + ', ' + y);
+ChessEngine.prototype.getBishopAttackingSquares = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.getBishopAttackingSquares: ' + x + ', ' + y);
 
   var self = this;
   var squares = [];
@@ -351,7 +351,7 @@ ChessValidator.prototype.getBishopAttackingSquares = function(x, y) {
       var nx = x + dx;
       var ny = y + dy;
 
-      while (ChessValidator.areValidCoordinates(nx, ny)) {
+      while (ChessEngine.areValidCoordinates(nx, ny)) {
         squares.push([nx, ny]);
 
         if (!self.isEmptyAt(nx, ny)) {
@@ -367,8 +367,8 @@ ChessValidator.prototype.getBishopAttackingSquares = function(x, y) {
   return squares;
 };
 
-ChessValidator.prototype.getRookAttackingSquares = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.getRookAttackingSquares: ' + x + ', ' + y);
+ChessEngine.prototype.getRookAttackingSquares = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.getRookAttackingSquares: ' + x + ', ' + y);
 
   var squares = [];
   var dx = [-1, +1, 0, 0];
@@ -378,7 +378,7 @@ ChessValidator.prototype.getRookAttackingSquares = function(x, y) {
     var nx = x + dx[i];
     var ny = y + dy[i];
 
-    while (ChessValidator.areValidCoordinates(nx, ny)) {
+    while (ChessEngine.areValidCoordinates(nx, ny)) {
       squares.push([nx, ny]);
 
       if (!this.isEmptyAt(nx, ny)) {
@@ -393,13 +393,13 @@ ChessValidator.prototype.getRookAttackingSquares = function(x, y) {
   return squares;
 };
 
-ChessValidator.prototype.getQueenAttackingSquares = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.getQueenAttackingSquares: ' + x + ', ' + y);
+ChessEngine.prototype.getQueenAttackingSquares = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.getQueenAttackingSquares: ' + x + ', ' + y);
   return this.getBishopAttackingSquares(x, y).concat(this.getRookAttackingSquares(x, y));
 };
 
-ChessValidator.prototype.getKingAttackingSquares = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.getKingAttackingSquares: ' + x + ', ' + y);
+ChessEngine.prototype.getKingAttackingSquares = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.getKingAttackingSquares: ' + x + ', ' + y);
   var squares = [];
 
   for (var dx = -1; dx <= +1; dx++) {
@@ -408,7 +408,7 @@ ChessValidator.prototype.getKingAttackingSquares = function(x, y) {
         var nx = x + dx;
         var ny = y + dy;
 
-        if (ChessValidator.areValidCoordinates(nx, ny)) {
+        if (ChessEngine.areValidCoordinates(nx, ny)) {
           squares.push([nx, ny]);
         }
       }
@@ -419,8 +419,8 @@ ChessValidator.prototype.getKingAttackingSquares = function(x, y) {
 };
 
 // Get the squares attacked by a certain piece. Includes friendly pieces.
-ChessValidator.prototype.getAttackingSquares = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessValidator.getAttackingSquares: ' + x + ', ' + y);
+ChessEngine.prototype.getAttackingSquares = function(x, y) {
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessEngine.getAttackingSquares: ' + x + ', ' + y);
   var piece = this.getPieceAt(x, y).name[1];
 
   if (piece === EMPTY) {
@@ -443,8 +443,8 @@ ChessValidator.prototype.getAttackingSquares = function(x, y) {
   return [];
 };
 
-ChessValidator.prototype.isInCheck = function(player) {
-  assert(ChessValidator.isValidPlayer(player), 'Invalid player in ChessValidator.isInCheck: ' + player);
+ChessEngine.prototype.isInCheck = function(player) {
+  assert(ChessEngine.isValidPlayer(player), 'Invalid player in ChessEngine.isInCheck: ' + player);
   var other = player === WHITE ? BLACK : WHITE;
   var king = [-1, -1];
 
@@ -456,7 +456,7 @@ ChessValidator.prototype.isInCheck = function(player) {
     }
   }
 
-  assert(king[0] !== -1 && king[1] !== -1, 'King not found in ChessValidator.isInCheck');
+  assert(king[0] !== -1 && king[1] !== -1, 'King not found in ChessEngine.isInCheck');
 
   for (var x = 0; x < BOARD_SIZE; x++) {
     for (var y = 0; y < BOARD_SIZE; y++) {
@@ -469,7 +469,7 @@ ChessValidator.prototype.isInCheck = function(player) {
   return false;
 };
 
-ChessValidator.prototype.checkForCastle = function(move) {
+ChessEngine.prototype.checkForCastle = function(move) {
   var player = move[0];
 
   if (move.length >= 7) {
@@ -501,7 +501,7 @@ ChessValidator.prototype.checkForCastle = function(move) {
 * TODO: check for invalid move notation (sent by client, so can't be trusted)
 * TODO: pawns can only move diagonally when capturing; also check en passant
 */
-ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
+ChessEngine.prototype.isLegalMove = function(move, skipTimeCheck) {
   var player = this.turn;
   var other = player === WHITE ? BLACK : WHITE;
 
@@ -612,7 +612,7 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
     var from = move.substring(2, 4);
     var to = move.substring(5, 7);
 
-    if (!ChessValidator.isValidSquare(from) || !ChessValidator.isValidSquare(to)) {
+    if (!ChessEngine.isValidSquare(from) || !ChessEngine.isValidSquare(to)) {
       return false;
     }
 
@@ -680,7 +680,7 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
         var capture = toPiece[0] === other;
 
         // en passant
-        if (!capture && this.isEmptyAt(toCoords[0], toCoords[1]) && ChessValidator.areValidCoordinates(toCoords[0], toCoords[1] + dir)) {
+        if (!capture && this.isEmptyAt(toCoords[0], toCoords[1]) && ChessEngine.areValidCoordinates(toCoords[0], toCoords[1] + dir)) {
           // Use the y-coordinate of the from to get the en passant pawn
           var passant = this.getPieceAt(toCoords[0], fromCoords[1]).name;
           var passantFromSquare = this.coordinatesToSquare(toCoords[0], toCoords[1] + dir);
@@ -707,7 +707,7 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
 
     var piece = move[2];
 
-    if (!ChessValidator.isValidPiece(piece) || piece === KING) {
+    if (!ChessEngine.isValidPiece(piece) || piece === KING) {
       return false;
     }
 
@@ -719,7 +719,7 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
 
     var square = move.substring(3, 5);
 
-    if (!ChessValidator.isValidSquare(square) || !this.isEmptyAtSquare(square)) {
+    if (!ChessEngine.isValidSquare(square) || !this.isEmptyAtSquare(square)) {
       return false;
     }
 
@@ -736,7 +736,7 @@ ChessValidator.prototype.isLegalMove = function(move, skipTimeCheck) {
   return legal;
 };
 
-ChessValidator.prototype.legalMoves = function(preventCheckmate) {
+ChessEngine.prototype.legalMoves = function(preventCheckmate) {
   // getAttackingSquares for everything, and also move forward once + twice for pawns
   // Then check isLegalMove, add to set
   // Also dropping pieces
@@ -764,7 +764,7 @@ ChessValidator.prototype.legalMoves = function(preventCheckmate) {
         if (name[1] === PAWN) {
           var dy = player === WHITE ? -1 : +1;
 
-          if (ChessValidator.areValidCoordinates(x, y + dy)) {
+          if (ChessEngine.areValidCoordinates(x, y + dy)) {
             var square1 = this.coordinatesToSquare(x, y + dy);
             var move1 = player + '_' + square + '-' + square1;
 
@@ -773,7 +773,7 @@ ChessValidator.prototype.legalMoves = function(preventCheckmate) {
             }
           }
 
-          if (ChessValidator.areValidCoordinates(x, y + 2 * dy)) {
+          if (ChessEngine.areValidCoordinates(x, y + 2 * dy)) {
             var square2 = this.coordinatesToSquare(x, y + 2 * dy);
             var move2 = player + '_' + square + '-' + square2;
 
@@ -817,16 +817,16 @@ ChessValidator.prototype.legalMoves = function(preventCheckmate) {
   return moves;
 };
 
-ChessValidator.prototype.isCheckmate = function() {
+ChessEngine.prototype.isCheckmate = function() {
   return this.isInCheck(this.turn) && this.legalMoves(true).length === 0;
 };
 
-ChessValidator.prototype.isEnPassant = function(move) {
+ChessEngine.prototype.isEnPassant = function(move) {
   if (isLowerCase(move[2]) && move.length >= 7) {
     var from = move.substring(2, 4);
     var to = move.substring(5, 7);
 
-    if (ChessValidator.isValidSquare(from) && ChessValidator.isValidSquare(to)) {
+    if (ChessEngine.isValidSquare(from) && ChessEngine.isValidSquare(to)) {
       var fromCoords = this.squareToCoordinates(from);
       var toCoords = this.squareToCoordinates(to);
       var name = this.getPieceAtSquare(from).name;
@@ -841,7 +841,7 @@ ChessValidator.prototype.isEnPassant = function(move) {
 };
 
 // TODO: simulateMove should return a list of what was captured
-ChessValidator.prototype.simulateMove = function(move, castleHack) {
+ChessEngine.prototype.simulateMove = function(move, castleHack) {
   var player = move[0];
 
   if (castleHack === undefined || !castleHack) {
@@ -871,7 +871,7 @@ ChessValidator.prototype.simulateMove = function(move, castleHack) {
     var from = move.substring(2, 4);
     var to = move.substring(5, 7);
 
-    if (!ChessValidator.isValidSquare(from) || !ChessValidator.isValidSquare(to)) {
+    if (!ChessEngine.isValidSquare(from) || !ChessEngine.isValidSquare(to)) {
       return previousBoard;
     }
 
@@ -899,7 +899,7 @@ ChessValidator.prototype.simulateMove = function(move, castleHack) {
     var name = player + move[2];
     var square = move.substring(3, 5);
 
-    if (!ChessValidator.isValidSquare(square)) {
+    if (!ChessEngine.isValidSquare(square)) {
       return previousBoard;
     }
 
@@ -910,7 +910,7 @@ ChessValidator.prototype.simulateMove = function(move, castleHack) {
 };
 
 // To be used for highlighting as well
-ChessValidator.prototype.fromAndToSquares = function(move) {
+ChessEngine.prototype.fromAndToSquares = function(move) {
   var player = move[0];
 
   if (move[2] === '0') {
@@ -934,19 +934,19 @@ ChessValidator.prototype.fromAndToSquares = function(move) {
   }
 };
 
-ChessValidator.prototype.undoMove = function(previousBoard) {
+ChessEngine.prototype.undoMove = function(previousBoard) {
   // TODO: probably don't need deepCopy here?
   this.board = deepCopy(previousBoard);
 };
 
-ChessValidator.prototype.makeMove = function(move) {
+ChessEngine.prototype.makeMove = function(move) {
   if (this.isLegalMove(move)) {
     var squares = this.fromAndToSquares(move);
     var from = squares[0];
     var to = squares[1];
 
     // Check for captures; send the capture to the other board's bank
-    if (this.otherValidator !== undefined && isLowerCase(move[2])) {
+    if (this.otherEngine !== undefined && isLowerCase(move[2])) {
       var chessPiece = this.getPieceAtSquare(to);
 
       if (this.isEnPassant(move)) {
@@ -960,7 +960,7 @@ ChessValidator.prototype.makeMove = function(move) {
       if (name !== EMPTY2) {
         var player = name[0];
         var originalPiece = chessPiece.originalPiece;
-        this.otherValidator.bank[player][originalPiece]++;
+        this.otherEngine.bank[player][originalPiece]++;
       }
     }
 
@@ -986,9 +986,9 @@ ChessValidator.prototype.makeMove = function(move) {
       this.firstMove = false;
 
       // Start the timer on the other board
-      if (this.otherValidator) {
-        this.otherValidator.firstMove = false;
-        this.otherValidator.timers[this.otherValidator.turn].startTime = now;
+      if (this.otherEngine) {
+        this.otherEngine.firstMove = false;
+        this.otherEngine.timers[this.otherEngine.turn].startTime = now;
       }
     }
 
@@ -999,22 +999,22 @@ ChessValidator.prototype.makeMove = function(move) {
 };
 
 // Preserve prototypes; sort of hacky
-function fixPrototypes(validator) {
-  validator.__proto__ = ChessValidator.prototype;
-  validator.timers[WHITE].__proto__ = Timer.prototype;
-  validator.timers[BLACK].__proto__ = Timer.prototype;
+function fixPrototypes(engine) {
+  engine.__proto__ = ChessEngine.prototype;
+  engine.timers[WHITE].__proto__ = Timer.prototype;
+  engine.timers[BLACK].__proto__ = Timer.prototype;
 }
 
-function makeLinks(validator0, validator1) {
-  validator0.otherValidator = validator1;
-  validator1.otherValidator = validator0;
+function makeLinks(engine0, engine1) {
+  engine0.otherEngine = engine1;
+  engine1.otherEngine = engine0;
 }
 
-function killLinks(validator0, validator1) {
-  validator0.otherValidator = validator1.otherValidator = null;
+function killLinks(engine0, engine1) {
+  engine0.otherEngine = engine1.otherEngine = null;
 }
 
-var exports = {ChessValidator: ChessValidator, fixPrototypes: fixPrototypes, makeLinks: makeLinks, killLinks: killLinks};
+var exports = {ChessEngine: ChessEngine, fixPrototypes: fixPrototypes, makeLinks: makeLinks, killLinks: killLinks};
 
 // Hack: will only be true if on the server
 if (typeof module !== 'undefined') {

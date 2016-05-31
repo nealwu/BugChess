@@ -1,6 +1,6 @@
 var db = require('mongojs')('bugchess', ['games', 'users']);
-var ChessValidatorJS = require('./public/javascripts/ChessValidator');
-var ChessValidator = ChessValidatorJS.ChessValidator;
+var ChessEngineJS = require('./public/javascripts/ChessEngine');
+var ChessEngine = ChessEngineJS.ChessEngine;
 
 function ensureIndices() {
   db.users.ensureIndex({username: 1}, {unique: true});
@@ -54,17 +54,17 @@ function getAllGames(callback) {
 }
 module.exports.getAllGames = getAllGames;
 
-function saveGame(gameID, validators, started) {
+function saveGame(gameID, engines, started) {
   doesGameExist(gameID, function(exists) {
-    ChessValidatorJS.killLinks(validators[0], validators[1]);
+    ChessEngineJS.killLinks(engines[0], engines[1]);
 
     if (exists) {
-      db.games.update({gameID: gameID}, {$set: {game: JSON.stringify(validators), started: started}});
+      db.games.update({gameID: gameID}, {$set: {game: JSON.stringify(engines), started: started}});
     } else {
-      db.games.save({gameID: gameID, game: JSON.stringify(validators), started: started, chats: []});
+      db.games.save({gameID: gameID, game: JSON.stringify(engines), started: started, chats: []});
     }
 
-    ChessValidatorJS.makeLinks(validators[0], validators[1]);
+    ChessEngineJS.makeLinks(engines[0], engines[1]);
   });
 }
 module.exports.saveGame = saveGame;
@@ -82,22 +82,22 @@ module.exports.updateChats = updateChats;
 
 function loadGame(gameID, callback) {
   db.games.find({gameID: gameID}, function(error, docs) {
-    var validators = null;
+    var engines = null;
 
     // If there's a game, try to load it
     if (!error && docs && docs.length > 0) {
       console.log('Found game ' + gameID + ' in DB! Loading...');
-      validators = JSON.parse(docs[0].game);
-      ChessValidatorJS.fixPrototypes(validators[0]);
-      ChessValidatorJS.fixPrototypes(validators[1]);
-      ChessValidatorJS.makeLinks(validators[0], validators[1]);
+      engines = JSON.parse(docs[0].game);
+      ChessEngineJS.fixPrototypes(engines[0]);
+      ChessEngineJS.fixPrototypes(engines[1]);
+      ChessEngineJS.makeLinks(engines[0], engines[1]);
     } else {
       console.log('Game ' + gameID + ' not found in DB! Creating new game...');
-      validators = [new ChessValidator(), new ChessValidator()];
-      saveGame(gameID, validators, false);
+      engines = [new ChessEngine(), new ChessEngine()];
+      saveGame(gameID, engines, false);
     }
 
-    callback(validators);
+    callback(engines);
   });
 }
 module.exports.loadGame = loadGame;

@@ -1,4 +1,4 @@
-/* globals console, alert, Timer, $, ChessValidator, Raphael, STARTING_BOARD, io, fixPrototypes, makeLinks */
+/* globals console, alert, Timer, $, ChessEngine, Raphael, STARTING_BOARD, io, fixPrototypes, makeLinks */
 
 var MAX_CHATS = 15;
 
@@ -67,18 +67,18 @@ function getGameID() {
 }
 
 function displayBoards() {
-  boards[0].getBoardFromValidator();
-  boards[1].getBoardFromValidator();
+  boards[0].getBoardFromEngine();
+  boards[1].getBoardFromEngine();
 
   // Hack; raphael's image function doesn't have callback
   window.setTimeout(function() {
-    if (!checkmated && boards[0].validator.isCheckmate()) {
+    if (!checkmated && boards[0].engine.isCheckmate()) {
       checkmated = true;
       stopTimers();
       alert('Checkmate on left board!');
     }
 
-    if (!checkmated && boards[1].validator.isCheckmate()) {
+    if (!checkmated && boards[1].engine.isCheckmate()) {
       checkmated = true;
       stopTimers();
       alert('Checkmate on right board!');
@@ -136,8 +136,8 @@ function ChessBoard(number) {
 }
 
 ChessBoard.prototype.placePiece = function(name, square) {
-  assert(ChessValidator.isValidName(name), 'Invalid name given to ChessBoard.placePiece: ' + name);
-  assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.placePiece: ' + square);
+  assert(ChessEngine.isValidName(name), 'Invalid name given to ChessBoard.placePiece: ' + name);
+  assert(ChessEngine.isValidSquare(square), 'Invalid square given to ChessBoard.placePiece: ' + square);
 
   if (this.pieceAtSquare[square]) {
     this.pieceAtSquare[square].remove();
@@ -155,7 +155,7 @@ ChessBoard.prototype.placePiece = function(name, square) {
 
 // placeBank actually places a new image
 ChessBoard.prototype.placeBank = function(player, bankIndex, count) {
-  assert(ChessValidator.isValidPlayer(player), 'Invalid player given to ChessBoard.placeBank: ' + player);
+  assert(ChessEngine.isValidPlayer(player), 'Invalid player given to ChessBoard.placeBank: ' + player);
   assert(0 <= bankIndex && bankIndex < BANK_ORDER.length, 'Invalid bankIndex given to ChessBoard.placeBank: ' + bankIndex);
   count = count === undefined ? 0 : count;
 
@@ -188,8 +188,8 @@ ChessBoard.prototype.placeBank = function(player, bankIndex, count) {
 
 // changeBank just modifies the text and number
 ChessBoard.prototype.changeBank = function(player, piece, count) {
-  assert(ChessValidator.isValidPlayer(player), 'Invalid player given to ChessBoard.changeBank: ' + player);
-  assert(ChessValidator.isValidPiece(piece), 'Invalid piece given to ChessBoard.changeBank: ' + piece);
+  assert(ChessEngine.isValidPlayer(player), 'Invalid player given to ChessBoard.changeBank: ' + player);
+  assert(ChessEngine.isValidPiece(piece), 'Invalid piece given to ChessBoard.changeBank: ' + piece);
   assert(count >= 0, 'Invalid count given to ChessBoard.changeBank: ' + count);
   assert(this.bank[player][piece] !== undefined, 'ChessBoard.changeBank called before bank was initialized');
 
@@ -256,7 +256,7 @@ ChessBoard.prototype.initBoard = function() {
     this.placeBank(BLACK, i);
   }
 
-  this.validator = new ChessValidator();
+  this.engine = new ChessEngine();
   this.timers = {};
   this.timers[WHITE] = new DisplayTimer(DisplayTimer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + WHITE);
   this.timers[BLACK] = new DisplayTimer(DisplayTimer.INITIAL_MILLISECONDS, 'timer' + this.number + '_' + BLACK);
@@ -270,42 +270,42 @@ ChessBoard.prototype.startTimer = function() {
   var self = this;
 
   this.timerInterval = window.setInterval(function() {
-    self.timers[self.validator.turn].updateTime();
+    self.timers[self.engine.turn].updateTime();
   }, DisplayTimer.INTERVAL);
 };
 
-ChessBoard.prototype.getBoardFromValidator = function() {
+ChessBoard.prototype.getBoardFromEngine = function() {
   var self = this;
 
-  // For each square, check the current piece and the validator piece and see if they're different
-  ChessValidator.allSquares().forEach(function(square) {
+  // For each square, check the current piece and the engine piece and see if they're different
+  ChessEngine.allSquares().forEach(function(square) {
     var piece = self.pieceAtSquare[square];
     var name = piece ? piece.data('name') : EMPTY2;
-    var validatorName = self.validator.getPieceAtSquare(square).name;
+    var engineName = self.engine.getPieceAtSquare(square).name;
 
-    if (name !== validatorName) {
+    if (name !== engineName) {
       if (name !== EMPTY2) {
         piece.remove();
         self.pieceAtSquare[square] = null;
       }
 
-      if (validatorName !== EMPTY2) {
-        self.placePiece(validatorName, square);
+      if (engineName !== EMPTY2) {
+        self.placePiece(engineName, square);
       }
     }
   });
 
   [WHITE, BLACK].forEach(function(player) {
     BANK_ORDER.forEach(function(piece) {
-      self.changeBank(player, piece, self.validator.bank[player][piece]);
+      self.changeBank(player, piece, self.engine.bank[player][piece]);
     });
   });
 
   this.defaultSquareColors();
 
   // Highlight most recent move
-  if (this.validator.lastMove !== '') {
-    var squares = this.validator.fromAndToSquares(this.validator.lastMove);
+  if (this.engine.lastMove !== '') {
+    var squares = this.engine.fromAndToSquares(this.engine.lastMove);
     var coords = this.squareToCoordinates(squares[0]);
     this.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
     coords = this.squareToCoordinates(squares[1]);
@@ -313,14 +313,14 @@ ChessBoard.prototype.getBoardFromValidator = function() {
   }
 
   [WHITE, BLACK].forEach(function(player) {
-    self.timers[player].getFromTimer(self.validator.timers[player]);
+    self.timers[player].getFromTimer(self.engine.timers[player]);
 
-    if (self.validator.turn === player && !self.validator.firstMove) {
+    if (self.engine.turn === player && !self.engine.firstMove) {
       self.timers[player].updateTime();
     }
   });
 
-  if (!this.validator.firstMove) {
+  if (!this.engine.firstMove) {
     this.startTimer();
   }
 };
@@ -329,7 +329,7 @@ ChessBoard.prototype.getBoardFromValidator = function() {
 // (0, 0) = 'a8'; (7, 7) = 'h1'
 ChessBoard.prototype.squareToCoordinates = function(square, skipAssert) {
   if (!skipAssert) {
-    assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.squareToCoordinates: ' + square);
+    assert(ChessEngine.isValidSquare(square), 'Invalid square given to ChessBoard.squareToCoordinates: ' + square);
   }
 
   var x = square.charCodeAt(0) - 'a'.charCodeAt(0);
@@ -345,7 +345,7 @@ ChessBoard.prototype.squareToCoordinates = function(square, skipAssert) {
 
 ChessBoard.prototype.coordinatesToSquare = function(x, y, skipAssert) {
   if (!skipAssert) {
-    assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessBoard.coordinatesToSquare: ' + x + ', ' + y);
+    assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessBoard.coordinatesToSquare: ' + x + ', ' + y);
   }
 
   // If the bottom player is black, flip the coordinates
@@ -370,11 +370,11 @@ ChessBoard.prototype.makeMove = function(move) {
     return false;
   }
 
-  if (!this.validator.isLegalMove(move)) {
+  if (!this.engine.isLegalMove(move)) {
     return false;
   }
 
-  this.validator.makeMove(move);
+  this.engine.makeMove(move);
   this.lastMove = move;
   displayBoards();
 
@@ -387,12 +387,12 @@ ChessBoard.prototype.makeMove = function(move) {
 };
 
 ChessBoard.prototype.coordinatesToPixels = function(x, y) {
-  assert(ChessValidator.areValidCoordinates(x, y), 'Invalid coordinates given to ChessBoard.coordinatesToPixels: ' + x + ', ' + y);
+  assert(ChessEngine.areValidCoordinates(x, y), 'Invalid coordinates given to ChessBoard.coordinatesToPixels: ' + x + ', ' + y);
   return [x * SQUARE_PIXELS, y * SQUARE_PIXELS + BANK_PIXELS];
 };
 
 ChessBoard.prototype.squareToPixels = function(square) {
-  assert(ChessValidator.isValidSquare(square), 'Invalid square given to ChessBoard.squareToPixels: ' + square);
+  assert(ChessEngine.isValidSquare(square), 'Invalid square given to ChessBoard.squareToPixels: ' + square);
   var coords = this.squareToCoordinates(square);
   return this.coordinatesToPixels(coords[0], coords[1]);
 };
@@ -421,7 +421,7 @@ ChessBoard.pieceStart = function(x, y, event) {
   this.paper.chessBoard.boardSquares[coords[0]][coords[1]].attr('fill', FROM_COLOR);
 
   var square = this.paper.chessBoard.coordinatesToSquare(coords[0], coords[1]);
-  var legalMoves = this.paper.chessBoard.validator.legalMoves(false);
+  var legalMoves = this.paper.chessBoard.engine.legalMoves(false);
 
   for (var i in legalMoves) {
     var move = legalMoves[i];
@@ -451,7 +451,7 @@ ChessBoard.pieceEnd = function(event) {
   console.log(move);
 
   // Check for validity
-  if (ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.makeMove(move)) {
+  if (ChessEngine.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.makeMove(move)) {
     console.log('Legal move!');
   } else {
     // Put back in place
@@ -459,7 +459,7 @@ ChessBoard.pieceEnd = function(event) {
     var pixelCoords = this.paper.chessBoard.squareToPixels(this.data('square'));
     this.attr('x', pixelCoords[0]);
     this.attr('y', pixelCoords[1]);
-    this.paper.chessBoard.getBoardFromValidator();
+    this.paper.chessBoard.getBoardFromEngine();
   }
 };
 
@@ -506,7 +506,7 @@ ChessBoard.bankEnd = function(event) {
   console.log(move);
 
   // Check for validity
-  if (count > 0 && ChessValidator.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.makeMove(move)) {
+  if (count > 0 && ChessEngine.areValidCoordinates(toCoords[0], toCoords[1]) && this.paper.chessBoard.makeMove(move)) {
     console.log('Legal move!');
   } else {
     // Put back in place
@@ -524,23 +524,23 @@ $(document).ready(function() {
     username = $('#username').text();
   }
 
-  socket.on('update', function(validators) {
+  socket.on('update', function(engines) {
     if (boards.length === 0) {
       // Create two boards AFTER the socket is connected
       boards = [new ChessBoard(0), new ChessBoard(1)];
     }
 
-    boards[0].validator = validators[0];
-    boards[1].validator = validators[1];
+    boards[0].engine = engines[0];
+    boards[1].engine = engines[1];
 
     if (shouldRotateBoards) {
-      boards[0].validator = validators[1];
-      boards[1].validator = validators[0];
+      boards[0].engine = engines[1];
+      boards[1].engine = engines[0];
     }
 
-    fixPrototypes(boards[0].validator);
-    fixPrototypes(boards[1].validator);
-    makeLinks(boards[0].validator, boards[1].validator);
+    fixPrototypes(boards[0].engine);
+    fixPrototypes(boards[1].engine);
+    makeLinks(boards[0].engine, boards[1].engine);
     displayBoards();
   });
 
@@ -562,10 +562,10 @@ $(document).ready(function() {
     // On the client we will completely rotate everything, but when we communicate with the server we need to check for shouldRotateBoards
     shouldRotateBoards = !shouldRotateBoards;
 
-    // Swap the two validators and re-display the boards
-    var temp = boards[0].validator;
-    boards[0].validator = boards[1].validator;
-    boards[1].validator = temp;
+    // Swap the two engines and re-display the boards
+    var temp = boards[0].engine;
+    boards[0].engine = boards[1].engine;
+    boards[1].engine = temp;
     displayBoards();
 
     // Swap the sit button contents

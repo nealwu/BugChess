@@ -1,6 +1,6 @@
 var io = require('socket.io').listen();
 var db = require('./db');
-var ChessValidatorJS = require('./public/javascripts/ChessValidator');
+var ChessEngineJS = require('./public/javascripts/ChessEngine');
 
 // io.configure(function() {
 //     io.set('transports', ['xhr-polling']);
@@ -10,13 +10,13 @@ var ChessValidatorJS = require('./public/javascripts/ChessValidator');
 var PRIVATE_ID = 1000000;
 var GAME_PREFIX = 'game';
 
-function sendUpdate(gameID, validators) {
+function sendUpdate(gameID, engines) {
   console.log('Updating game ' + gameID);
 
-  // Killing the links between the two validators is necessary so that when socket.io tries to convert them to JSON objects, there isn't a cycle
-  ChessValidatorJS.killLinks(validators[0], validators[1]);
-  io.sockets.in(GAME_PREFIX + gameID).emit('update', validators);
-  ChessValidatorJS.makeLinks(validators[0], validators[1]);
+  // Killing the links between the two engines is necessary so that when socket.io tries to convert them to JSON objects, there isn't a cycle
+  ChessEngineJS.killLinks(engines[0], engines[1]);
+  io.sockets.in(GAME_PREFIX + gameID).emit('update', engines);
+  ChessEngineJS.makeLinks(engines[0], engines[1]);
 }
 
 var gameSeatToName = {};
@@ -66,8 +66,8 @@ io.sockets.on('connection', function(socket) {
     console.log('This is ' + socket.id);
     socket.join(GAME_PREFIX + gameID);
 
-    db.loadGame(gameID, function(validators) {
-      sendUpdate(gameID, validators);
+    db.loadGame(gameID, function(engines) {
+      sendUpdate(gameID, engines);
     });
 
     if (gameID in gameSeatToName) {
@@ -91,7 +91,7 @@ io.sockets.on('connection', function(socket) {
     console.log('ID: ' + socket.id);
     console.log('Make move in game ' + gameID);
 
-    db.loadGame(gameID, function(validators) {
+    db.loadGame(gameID, function(engines) {
       if (!move) {
         console.log('No move received!');
         return;
@@ -118,14 +118,14 @@ io.sockets.on('connection', function(socket) {
         return;
       }
 
-      if (!validators[number].makeMove(move)) {
+      if (!engines[number].makeMove(move)) {
         console.log('Illegal move!');
         return;
       }
 
       console.log('Legal move!');
-      db.saveGame(gameID, validators, true);
-      sendUpdate(gameID, validators);
+      db.saveGame(gameID, engines, true);
+      sendUpdate(gameID, engines);
     });
   });
 
