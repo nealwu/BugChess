@@ -31,7 +31,7 @@ var EMPTY = '.';
 var EMPTY2 = EMPTY + EMPTY;
 
 var BANK_ORDER = [QUEEN, ROOK, BISHOP, KNIGHT, PAWN];
-var BANK_FONT_SIZE = 24;
+var BANK_FONT_SIZE = 20;
 
 var LIGHT_COLOR = '#f0d9b5';
 var DARK_COLOR = '#b58863';
