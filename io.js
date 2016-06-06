@@ -192,14 +192,14 @@ io.sockets.on('connection', function(socket) {
         });
 
         for (var i = 0; i < gameIDs.length; i++) {
-          if (gameIDs[i] !== i) {
-            gameID = i;
+          if (gameIDs[i] !== i + 1) {
+            gameID = i + 1;
             break;
           }
         }
 
         if (gameID === -1) {
-          gameID = gameIDs.length;
+          gameID = gameIDs.length + 1;
         }
       }
 
