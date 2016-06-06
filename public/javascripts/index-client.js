@@ -16,14 +16,21 @@ $(document).ready(function() {
   // Set up socket.io
   socket = io.connect();
 
-  socket.on('games', function(docs) {
-    reverse(docs);
-    console.log(docs);
-    docs.forEach(function(doc) {
-      var gameID = doc.gameID;
+  socket.on('games', function(games) {
+    reverse(games);
+    console.log(games);
+    games.forEach(function(game) {
+      var gameID = game.gameID;
       var link = $('<a>').attr('href', document.URL + 'game/' + gameID).html('Game ' + gameID);
       var linkDiv = $('<div>').append(link);
-      $('#games').append(linkDiv);
+
+      if (!game.started) {
+        $('#new-games').append(linkDiv);
+      } else if (!game.finished) {
+        $('#started-games').append(linkDiv);
+      } else {
+        $('#finished-games').append(linkDiv);
+      }
     });
   });
 

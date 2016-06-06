@@ -6,9 +6,13 @@ block scripts
   script(src='/javascripts/index-client.js')
 
 block content
-  a#new-public-game.btn.btn-primary Join new game
-  a#new-private-game.btn.btn-danger Make private game
+  a#new-public-game.btn.btn-primary Play now!
+  a#new-private-game.btn.btn-danger Create private game
   br
   br
-  p Previous games:
-  div#games
+  p New games:
+  div#new-games
+  p Running games:
+  div#started-games
+  p Finished games:
+  div#finished-games
