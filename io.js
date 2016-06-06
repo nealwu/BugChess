@@ -129,8 +129,8 @@ io.sockets.on('connection', function(socket) {
     });
   });
 
-  socket.on('game_over', function() {
-
+  socket.on('game_over', function(gameID) {
+    db.markGameAsFinished(gameID);
   });
 
   socket.on('get_games', function() {

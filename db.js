@@ -69,6 +69,11 @@ function saveGame(gameID, engines, started) {
 }
 module.exports.saveGame = saveGame;
 
+function markGameAsFinished(gameID) {
+  db.games.update({gameID: gameID}, {$set: {finished: true}});
+}
+module.exports.markGameAsFinished = markGameAsFinished;
+
 function updateChats(gameID, chats) {
   doesGameExist(gameID, function(exists) {
     if (exists) {

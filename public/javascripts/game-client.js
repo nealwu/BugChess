@@ -75,12 +75,14 @@ function displayBoards() {
     if (!checkmated && boards[0].engine.isCheckmate()) {
       checkmated = true;
       stopTimers();
+      socket.emit('game_over', getGameID());
       alert('Checkmate on left board!');
     }
 
     if (!checkmated && boards[1].engine.isCheckmate()) {
       checkmated = true;
       stopTimers();
+      socket.emit('game_over', getGameID());
       alert('Checkmate on right board!');
     }
   }, 1000);
@@ -119,7 +121,7 @@ DisplayTimer.prototype.updateTime = function() {
   this.display();
 
   if (this.outOfTime()) {
-    socket.emit('game_over');
+    socket.emit('game_over', getGameID());
     stopTimers();
 
     if (!alertedOutOfTime) {
