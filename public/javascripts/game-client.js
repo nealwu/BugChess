@@ -8,7 +8,13 @@ var SQUARE_PIXELS = 0;
 if (navigator.userAgent.indexOf('iPhone') !== -1 || navigator.userAgent.indexOf('iPad') !== -1) {
   SQUARE_PIXELS = 45;
 } else {
-  SQUARE_PIXELS = 36;
+  if ($(window).width() >= 1360) {
+    SQUARE_PIXELS = 60;
+  } else if ($(window).width() >= 1200) {
+    SQUARE_PIXELS = 48;
+  } else {
+    SQUARE_PIXELS = 36;
+  }
 }
 
 var PIECE_OFFSET = 0;

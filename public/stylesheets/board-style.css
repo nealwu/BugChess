@@ -1,11 +1,8 @@
-#boards {
-  text-align: center;
-}
-
 .board_div {
   display: inline-block;
   position: relative;
   padding: 10px;
+  vertical-align: top;
 }
 
 .timer {
