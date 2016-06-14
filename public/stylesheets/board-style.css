@@ -1,3 +1,7 @@
+input[type=button] {
+  font-size: 18pt;
+}
+
 .board_div {
   display: inline-block;
   position: relative;
@@ -7,6 +11,7 @@
 
 .timer {
   font-weight: bold;
+  font-size: 24pt;
 }
 
 .timer0, .name1 {

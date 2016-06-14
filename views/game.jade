@@ -9,6 +9,7 @@ block scripts
 
 block content
   p Share the link above with your friends and start playing! Or you can wait for someone to join.
+  input#rotate(type='button' value='Rotate Boards')
   div#boards
     div.board_div
       div#timer0_B.timer.timer0
@@ -32,4 +33,3 @@ block content
         label(for='chat') Chat:
         input#chat(name='chat' type='text' placeholder='Say hi!')
   div#username(style='display: none') #{user.username}
-  input#rotate(type='button' value='Rotate')
