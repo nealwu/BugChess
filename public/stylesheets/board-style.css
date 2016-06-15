@@ -32,3 +32,7 @@ input[type=button] {
 #chatbox input {
   width: 220px;
 }
+
+#new-private-game {
+  margin-left: 15px;
+}
