@@ -11,23 +11,25 @@ block content
   p Share the link above with your friends and start playing! Or you can wait for someone to join.
   input#rotate(type='button' value='Rotate Boards')
   div#boards
-    div.board_div
+    div.board-div
       div#timer0_B.timer.timer0
+      div#game-status-0.game-status
       div#name0_B.name.name0
         input#sit0_B.sit_button(type='button' value='Sit!')
       div#board0.board
       div#timer0_W.timer.timer0
       div#name0_W.name.name0
         input#sit0_W.sit_button(type='button' value='Sit!')
-    div.board_div
+    div.board-div
       div#name1_W.name.name1
         input#sit1_W.sit_button(type='button' value='Sit!')
+      div#game-status-1.game-status
       div#timer1_W.timer.timer1
       div#board1.board
       div#name1_B.name.name1
         input#sit1_B.sit_button(type='button' value='Sit!')
       div#timer1_B.timer.timer1
-    div.board_div
+    div.board-div
       div#chatbox
         div#chats
         label(for='chat') Chat:

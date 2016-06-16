@@ -2,10 +2,20 @@ input[type=button] {
   font-size: 18pt;
 }
 
-.board_div {
+.game-status {
+  color: red;
+  font-weight: bold;
+  display: block;
+  text-align: center;
+  width: 100%;
+  position: absolute;
+  font-size: 24pt;
+}
+
+.board-div {
   display: inline-block;
   position: relative;
-  padding: 10px;
+  margin-right: 15px;
   vertical-align: top;
 }
 
