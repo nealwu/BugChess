@@ -81,14 +81,14 @@ function displayBoards() {
       checkmated = true;
       stopTimers();
       socket.emit('game_over', getGameID());
-      $('#game-status-0').text('Checkmate!');
+      $('#game-status0_' + boards[0].engine.getTurn()).text('Checkmate!');
     }
 
     if (!checkmated && boards[1].engine.isCheckmate()) {
       checkmated = true;
       stopTimers();
       socket.emit('game_over', getGameID());
-      $('#game-status-1').text('Checkmate!');
+      $('#game-status1_' + boards[1].engine.getTurn()).text('Checkmate!');
     }
   };
 
@@ -136,9 +136,7 @@ DisplayTimer.prototype.updateTime = function() {
     if (!alertedOutOfTime) {
       // Extract the last three characters out of 'timer0_W'
       var player = this.id.substring(5);
-      var board = player[0];
-      var side = player[2];
-      $('#game-status-' + board).text('Out of time!');
+      $('#game-status' + player).text('Out of time!');
       alertedOutOfTime = true;
     }
   }

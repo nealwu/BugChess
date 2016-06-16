@@ -217,6 +217,10 @@ ChessEngine.prototype.initialize = function() {
   this.firstMove = true;
 };
 
+ChessEngine.prototype.getTurn = function() {
+  return this.turn;
+};
+
 ChessEngine.prototype.bankToString = function(bank) {
   return QUEEN + ':' + bank[QUEEN] + ' ' +
   ROOK + ':' + bank[ROOK] + ' ' +
