@@ -45,7 +45,7 @@ var DARK_COLOR = '#b58863';
 var FROM_COLOR = '#9cf';
 var TO_COLOR = '#28d';
 
-var SIT_BUTTON_TEXT = 'Sit!';
+var SIT_BUTTON_TEXT = 'Sit here!';
 
 var shouldRotateBoards = false;
 var alertedOutOfTime = false;
