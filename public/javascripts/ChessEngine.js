@@ -91,6 +91,7 @@ function arrayContains(array, elem) {
 }
 
 function Timer(initial) {
+  this.startTime = 0;
   this.getFromMilliseconds(initial);
 }
 
@@ -110,7 +111,7 @@ Timer.prototype.toString = function() {
 };
 
 Timer.prototype.toMilliseconds = function() {
-  return this.minutes * 60 * 1000 + this.seconds * 1000 + this.milliseconds;
+  return (this.minutes * 60 + this.seconds) * 1000 + this.milliseconds;
 };
 
 Timer.prototype.getFromMilliseconds = function(milliseconds) {
@@ -127,10 +128,16 @@ Timer.prototype.subtractMilliseconds = function(milliseconds) {
   this.getFromMilliseconds(this.toMilliseconds() - milliseconds);
 };
 
-Timer.prototype.updateTime = function() {
-  var now = (new Date()).valueOf();
-  this.subtractMilliseconds(now - this.startTime);
-  this.startTime = now;
+Timer.prototype.updateTime = function(shouldSubtract, time) {
+  if (!time) {
+    time = (new Date()).getTime();
+  }
+
+  if (shouldSubtract && this.startTime > 0) {
+    this.subtractMilliseconds(time - this.startTime);
+  }
+
+  this.startTime = time;
 };
 
 function ChessPiece(name) {
@@ -215,11 +222,34 @@ ChessEngine.prototype.initialize = function() {
   this.turn = WHITE;
   this.lastMove = '';
   this.firstMove = true;
+  this.finishedTime = 0;
 };
 
 ChessEngine.prototype.getTurn = function() {
   return this.turn;
 };
+
+ChessEngine.prototype.isFinished = function() {
+  return this.finishedTime > 0;
+}
+
+// Call this method before changing whose turn it is
+ChessEngine.prototype.updateBothTimers = function() {
+  var time = this.finishedTime;
+
+  if (!time) {
+    // The game is not finished yet, so use the current time
+    time = (new Date()).getTime();
+  }
+
+  this.timers[WHITE].updateTime(this.turn === WHITE, time);
+  this.timers[BLACK].updateTime(this.turn === BLACK, time);
+}
+
+ChessEngine.prototype.setFinishedTime = function(time) {
+  this.finishedTime = time;
+  this.updateBothTimers();
+}
 
 ChessEngine.prototype.bankToString = function(bank) {
   return QUEEN + ':' + bank[QUEEN] + ' ' +
@@ -517,7 +547,7 @@ ChessEngine.prototype.isLegalMove = function(move, skipTimeCheck) {
   }
 
   if (!this.firstMove && !skipTimeCheck) {
-    this.timers[this.turn].updateTime();
+    this.updateBothTimers();
 
     // Illegal if out of time
     if (this.timers[this.turn].outOfTime()) {
@@ -825,6 +855,14 @@ ChessEngine.prototype.isCheckmate = function() {
   return this.isInCheck(this.turn) && this.legalMoves(true).length === 0;
 };
 
+ChessEngine.prototype.outOfTime = function(turn) {
+  if (turn) {
+    return this.timers[turn].outOfTime();
+  }
+
+  return this.outOfTime(WHITE) || this.outOfTime(BLACK);
+}
+
 ChessEngine.prototype.isEnPassant = function(move) {
   if (isLowerCase(move[2]) && move.length >= 7) {
     var from = move.substring(2, 4);
@@ -950,7 +988,7 @@ ChessEngine.prototype.makeMove = function(move) {
     var to = squares[1];
 
     // Check for captures; send the capture to the other board's bank
-    if (this.otherEngine !== undefined && isLowerCase(move[2])) {
+    if (this.otherEngine && isLowerCase(move[2])) {
       var chessPiece = this.getPieceAtSquare(to);
 
       if (this.isEnPassant(move)) {
@@ -969,6 +1007,12 @@ ChessEngine.prototype.makeMove = function(move) {
     }
 
     this.simulateMove(move);
+    this.updateBothTimers();
+
+    if (this.otherEngine) {
+      this.otherEngine.updateBothTimers();
+    }
+
     this.turn = this.turn === WHITE ? BLACK : WHITE;
 
     // Modify bank for dropped pieces
@@ -982,17 +1026,12 @@ ChessEngine.prototype.makeMove = function(move) {
     this.getPieceAtSquare(from).hasMoved = this.getPieceAtSquare(to).hasMoved = true;
     this.lastMove = move;
 
-    // Update timers
-    var now = (new Date()).valueOf();
-    this.timers[this.turn].startTime = now;
-
     if (this.firstMove) {
       this.firstMove = false;
 
-      // Start the timer on the other board
+      // Mark firstMove as false on the other board
       if (this.otherEngine) {
         this.otherEngine.firstMove = false;
-        this.otherEngine.timers[this.otherEngine.turn].startTime = now;
       }
     }
 

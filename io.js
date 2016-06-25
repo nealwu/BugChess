@@ -130,7 +130,24 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('game_over', function(gameID) {
-    db.markGameAsFinished(gameID);
+    // Add a 100 ms delay in order to avoid a race condition where the client runs out of time slightly before the server
+    setTimeout(function() {
+      db.loadGame(gameID, function(engines) {
+        engines[0].updateBothTimers();
+        engines[1].updateBothTimers();
+        var time = (new Date()).getTime();
+
+        if (engines[0].isCheckmate() || engines[1].isCheckmate() || engines[0].outOfTime() || engines[1].outOfTime()) {
+          engines[0].setFinishedTime(time);
+          engines[1].setFinishedTime(time);
+          db.saveGame(gameID, engines, true);
+          db.markGameAsFinished(gameID);
+          sendUpdate(gameID, engines);
+        } else {
+          console.error(new Error('Game ' + gameID + ' claims to be over when it isn\'t'));
+        }
+      });
+    }, 100);
   });
 
   socket.on('get_games', function() {

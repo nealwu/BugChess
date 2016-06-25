@@ -125,20 +125,30 @@ DisplayTimer.prototype.getFromTimer = function(timer) {
   this.display();
 };
 
-DisplayTimer.prototype.updateTime = function() {
-  Timer.prototype.updateTime.call(this);
-  this.display();
-
+DisplayTimer.prototype.displayOutOfTimeIfNeeded = function() {
   if (this.outOfTime()) {
-    socket.emit('game_over', getGameID());
-    stopTimers();
-
     if (!alertedOutOfTime) {
       // Extract the last three characters out of 'timer0_W'
       var player = this.id.substring(5);
       $('#game-status' + player).text('Out of time!');
       alertedOutOfTime = true;
     }
+  }
+}
+
+DisplayTimer.prototype.updateTime = function() {
+  if (boards[0].engine.isFinished() || boards[1].engine.isFinished()) {
+    this.displayOutOfTimeIfNeeded();
+    return;
+  }
+
+  Timer.prototype.updateTime.call(this, true);
+  this.display();
+
+  if (this.outOfTime()) {
+    stopTimers();
+    this.displayOutOfTimeIfNeeded();
+    socket.emit('game_over', getGameID());
   }
 };
 
@@ -304,7 +314,7 @@ ChessBoard.prototype.getBoardFromEngine = function() {
     }
   });
 
-  if (!this.engine.firstMove) {
+  if (!this.engine.firstMove && !this.engine.isFinished()) {
     this.startTimer();
   }
 };
