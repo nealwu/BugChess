@@ -18,7 +18,7 @@ $(document).ready(function() {
 
   socket.on('games', function(games) {
     reverse(games);
-    console.log(games);
+
     games.forEach(function(game) {
       var gameID = game.gameID;
       var link = $('<a>').attr('href', document.URL + 'game/' + gameID).html('Game ' + gameID);
