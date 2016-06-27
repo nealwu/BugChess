@@ -863,6 +863,22 @@ ChessEngine.prototype.outOfTime = function(turn) {
   return this.outOfTime(WHITE) || this.outOfTime(BLACK);
 }
 
+ChessEngine.prototype.getWinner = function() {
+  if (this.isCheckmate()) {
+    return this.turn === WHITE ? BLACK : WHITE;
+  }
+
+  if (this.outOfTime(WHITE)) {
+    return BLACK;
+  }
+
+  if (this.outOfTime(BLACK)) {
+    return WHITE;
+  }
+
+  return null;
+}
+
 ChessEngine.prototype.isEnPassant = function(move) {
   if (isLowerCase(move[2]) && move.length >= 7) {
     var from = move.substring(2, 4);

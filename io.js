@@ -148,7 +148,7 @@ io.sockets.on('connection', function(socket) {
         engines[1].updateBothTimers();
         var time = (new Date()).getTime();
 
-        if (engines[0].isCheckmate() || engines[1].isCheckmate() || engines[0].outOfTime() || engines[1].outOfTime()) {
+        if (engines[0].getWinner() || engines[1].getWinner()) {
           engines[0].setFinishedTime(time);
           engines[1].setFinishedTime(time);
           db.saveGame(gameID, engines, true);
