@@ -1,4 +1,4 @@
-var db = require('mongojs')('bugchess', ['games', 'users']);
+var db = require('mongojs')('bugchess', ['games', 'users', 'data']);
 var ChessEngineJS = require('./public/javascripts/ChessEngine');
 var ChessEngine = ChessEngineJS.ChessEngine;
 
@@ -88,6 +88,7 @@ module.exports.updateChats = updateChats;
 function loadGame(gameID, callback) {
   db.games.find({gameID: gameID}, function(error, docs) {
     var engines = null;
+    var chats = null;
 
     // If there's a game, try to load it
     if (!error && docs && docs.length > 0) {
@@ -96,13 +97,40 @@ function loadGame(gameID, callback) {
       ChessEngineJS.fixPrototypes(engines[0]);
       ChessEngineJS.fixPrototypes(engines[1]);
       ChessEngineJS.makeLinks(engines[0], engines[1]);
+      chats = docs[0].chats;
     } else {
       console.log('Game ' + gameID + ' not found in DB! Creating new game...');
       engines = [new ChessEngine(), new ChessEngine()];
       saveGame(gameID, engines, false);
     }
 
-    callback(engines);
+    if (chats === null) {
+      chats = [];
+    }
+
+    callback(engines, chats);
   });
 }
 module.exports.loadGame = loadGame;
+
+function saveObject(identifier, object) {
+  db.data.find({id: identifier}, function(error, docs) {
+    if (!error && docs && docs.length > 0) {
+      db.data.update({id: identifier}, {$set: {object: object}});
+    } else {
+      db.data.save({id: identifier, object: object});
+    }
+  });
+}
+module.exports.saveObject = saveObject;
+
+function loadObject(identifier, callback) {
+  db.data.find({id: identifier}, function(error, docs) {
+    if (!error && docs && docs.length > 0) {
+      callback(docs[0].object);
+    } else {
+      callback(null);
+    }
+  });
+}
+module.exports.loadObject = loadObject;

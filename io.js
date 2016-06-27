@@ -10,6 +10,17 @@ var ChessEngineJS = require('./public/javascripts/ChessEngine');
 var PRIVATE_ID = 1000000;
 var GAME_PREFIX = 'game';
 
+db.ensureIndices();
+
+var gameSeatToName = {};
+var chatsForGame = {};
+
+db.loadObject('gameSeatToName', function(object) {
+  if (object) {
+    gameSeatToName = object;
+  }
+});
+
 function sendUpdate(gameID, engines) {
   console.log('Updating game ' + gameID);
 
@@ -18,9 +29,6 @@ function sendUpdate(gameID, engines) {
   io.sockets.in(GAME_PREFIX + gameID).emit('update', engines);
   ChessEngineJS.makeLinks(engines[0], engines[1]);
 }
-
-var gameSeatToName = {};
-var chatsForGame = {};
 
 function socketSit(socketID, gameID, position, name) {
   if (!(gameID in gameSeatToName)) {
@@ -47,14 +55,13 @@ function socketSit(socketID, gameID, position, name) {
   }
 
   gameSeatToName[gameID][position] = name;
+  db.saveObject('gameSeatToName', gameSeatToName);
   return true;
 }
 
 function socketPermission(socketID, gameID, position, name) {
   return gameID in gameSeatToName && gameSeatToName[gameID][position] === name;
 }
-
-db.ensureIndices();
 
 io.sockets.on('connection', function(socket) {
   socket.on('connect_to_game', function(gameID) {
@@ -66,25 +73,29 @@ io.sockets.on('connection', function(socket) {
     console.log('This is ' + socket.id);
     socket.join(GAME_PREFIX + gameID);
 
-    db.loadGame(gameID, function(engines) {
+    db.loadGame(gameID, function(engines, chats) {
       sendUpdate(gameID, engines);
+
+      if (!(gameID in chatsForGame)) {
+        chatsForGame[gameID] = chats;
+      }
+
+      if (gameID in gameSeatToName) {
+        var seatToName = gameSeatToName[gameID];
+
+        for (var position in seatToName) {
+          var name = seatToName[position];
+          socket.emit('sit', {position: position, name: name});
+        }
+      }
+
+      if (gameID in chatsForGame) {
+        for (var i = 0; i < chatsForGame[gameID].length; i++) {
+          var chatObj = chatsForGame[gameID][i];
+          socket.emit('chat', chatObj.username, chatObj.date, chatObj.message);
+        }
+      }
     });
-
-    if (gameID in gameSeatToName) {
-      var seatToName = gameSeatToName[gameID];
-
-      for (var position in seatToName) {
-        var name = seatToName[position];
-        socket.emit('sit', {position: position, name: name});
-      }
-    }
-
-    if (gameID in chatsForGame) {
-      for (var i = 0; i < chatsForGame[gameID].length; i++) {
-        var chatObj = chatsForGame[gameID][i];
-        socket.emit('chat', chatObj.username, chatObj.date, chatObj.message);
-      }
-    }
   });
 
   socket.on('make_move', function(gameID, move, username) {
