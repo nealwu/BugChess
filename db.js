@@ -5,6 +5,8 @@ var ChessEngine = ChessEngineJS.ChessEngine;
 function ensureIndices() {
   db.users.ensureIndex({username: 1}, {unique: true});
   db.users.ensureIndex({email: 1}, {unique: true});
+  db.games.ensureIndex({gameID: 1}, {unique: true});
+  db.data.ensureIndex({id: 1}, {unique: true});
 }
 module.exports.ensureIndices = ensureIndices;
 
