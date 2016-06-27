@@ -144,6 +144,10 @@ io.sockets.on('connection', function(socket) {
     // Add a 100 ms delay in order to avoid a race condition where the client runs out of time slightly before the server
     setTimeout(function() {
       db.loadGame(gameID, function(engines) {
+        if (engines[0].isFinished() || engines[1].isFinished()) {
+          return;
+        }
+
         engines[0].updateBothTimers();
         engines[1].updateBothTimers();
         var time = (new Date()).getTime();
