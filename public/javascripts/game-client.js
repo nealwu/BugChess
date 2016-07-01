@@ -494,6 +494,22 @@ ChessBoard.bankEnd = function(event) {
 };
 
 $(document).ready(function() {
+  var clipboard = new Clipboard('#copy-link', {
+    text: function(trigger) {
+      return location.href;
+    }
+  });
+
+  $('#copy-link').click(function(event) {
+    $('#link-notification').text(location.href + ' has been copied to your clipboard!');
+    $('#link-notification').css('display', 'inline-block');
+    $('#link-notification').css('color', 'red');
+
+    window.setTimeout(function() {
+      $('#link-notification').hide();
+    }, 2000);
+  });
+
   // Set up socket.io
   socket = io.connect();
 

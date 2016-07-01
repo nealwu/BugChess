@@ -6,10 +6,13 @@ block scripts
   script(src='/javascripts/raphael-min.js')
   script(src='/javascripts/ChessEngine.js')
   script(src='/javascripts/game-client.js')
+  script(src='/javascripts/clipboard.min.js')
 
 block content
   p Share the link above with your friends and start playing! Or you can wait for someone to join.
   input#rotate(type='button' value='Rotate Boards')
+  input#copy-link(type='button' value='Share Link')
+  h4#link-notification
   div#boards
     div.board-div
       div#timer0_B.timer.timer0

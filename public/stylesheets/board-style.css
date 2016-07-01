@@ -46,3 +46,11 @@ input[type=button] {
 #new-private-game {
   margin-left: 15px;
 }
+
+#rotate, #copy-link {
+  margin-bottom: 10px;
+}
+
+#link-notification {
+  display: none;
+}
