@@ -48,7 +48,6 @@ var TO_COLOR = '#28d';
 var SIT_BUTTON_TEXT = 'Sit here!';
 
 var shouldRotateBoards = false;
-var alertedOutOfTime = false;
 
 // Game state variables
 var socket = null;
@@ -73,9 +72,19 @@ function getGameID() {
 }
 
 function displayBoards() {
+  // Clear the game statuses
+  $('.game-status').text('');
+
   boards[0].getBoardFromEngine();
   boards[1].getBoardFromEngine();
 
+  // Check for out of time
+  boards[0].timers[WHITE].displayOutOfTimeIfNeeded();
+  boards[0].timers[BLACK].displayOutOfTimeIfNeeded();
+  boards[1].timers[WHITE].displayOutOfTimeIfNeeded();
+  boards[1].timers[BLACK].displayOutOfTimeIfNeeded();
+
+  // Check for checkmate
   var testCheckmate = function() {
     if (!checkmated && boards[0].engine.isCheckmate()) {
       checkmated = true;
@@ -111,10 +120,7 @@ DisplayTimer.INTERVAL = 100;
 
 DisplayTimer.prototype.display = function() {
   $('#' + this.id).html(this.toString());
-
-  if (this.outOfTime()) {
-    $('#' + this.id).css('color', 'red');
-  }
+  $('#' + this.id).css('color', this.outOfTime() ? 'red' : 'black');
 };
 
 DisplayTimer.prototype.getFromTimer = function(timer) {
@@ -127,12 +133,9 @@ DisplayTimer.prototype.getFromTimer = function(timer) {
 
 DisplayTimer.prototype.displayOutOfTimeIfNeeded = function() {
   if (this.outOfTime()) {
-    if (!alertedOutOfTime) {
-      // Extract the last three characters out of 'timer0_W'
-      var player = this.id.substring(5);
-      $('#game-status' + player).text('Out of time!');
-      alertedOutOfTime = true;
-    }
+    // Extract the last three characters out of 'timer0_W'
+    var player = this.id.substring(5);
+    $('#game-status' + player).text('Out of time!');
   }
 }
 
@@ -372,8 +375,10 @@ ChessBoard.prototype.makeMove = function(move) {
   this.lastMove = move;
   displayBoards();
 
-  // Send the move to the server
+  // Check if we need to rotate before sending to the server
   var realBoardNumber = shouldRotateBoards ? 1 - this.number : this.number;
+
+  // Send the move to the server
   var emitMove = realBoardNumber + '_' + move;
   socket.emit('make_move', getGameID(), emitMove, username);
   console.log('Sent: ' + emitMove);
@@ -526,6 +531,7 @@ $(document).ready(function() {
     boards[0].engine = engines[0];
     boards[1].engine = engines[1];
 
+    // Received an update from the server; check if we need to rotate
     if (shouldRotateBoards) {
       boards[0].engine = engines[1];
       boards[1].engine = engines[0];
@@ -540,12 +546,13 @@ $(document).ready(function() {
   $('.sit_button').click(function(event) {
     var position = this.id.substring(this.id.length - 3);
 
-    if (shouldRotateBoards) {
-      position = (position[0] === '0' ? '1' : '0') + position.substring(1);
-    }
-
     if ($(this).val() !== SIT_BUTTON_TEXT) {
       return;
+    }
+
+    // Check if we need to rotate before sending to the server
+    if (shouldRotateBoards) {
+      position = (position[0] === '0' ? '1' : '0') + position.substring(1);
     }
 
     socket.emit('sit', getGameID(), {position: position, name: username});
@@ -559,7 +566,14 @@ $(document).ready(function() {
     var temp = boards[0].engine;
     boards[0].engine = boards[1].engine;
     boards[1].engine = temp;
-    displayBoards();
+
+    var copyStyle = function(obj, copyObj) {
+      if (copyObj.attr('style')) {
+        obj.attr('style', copyObj.attr('style'));
+      } else {
+        obj.attr('style', '');
+      }
+    };
 
     // Swap the sit button contents
     var copy0_W = $('#sit0_W').clone();
@@ -570,25 +584,19 @@ $(document).ready(function() {
     $('#sit1_W').val(copy0_W.val());
     $('#sit0_B').val(copy1_B.val());
     $('#sit1_B').val(copy0_B.val());
-
-    function copyStyle(obj, copyObj) {
-      if (copyObj.attr('style')) {
-        obj.attr('style', copyObj.attr('style'));
-      } else {
-        obj.attr('style', '');
-      }
-    }
-
     copyStyle($('#sit0_W'), copy1_W);
     copyStyle($('#sit1_W'), copy0_W);
     copyStyle($('#sit0_B'), copy1_B);
     copyStyle($('#sit1_B'), copy0_B);
+
+    displayBoards();
   });
 
   socket.on('sit', function(data) {
     var position = data.position;
     var name = data.name;
 
+    // Received a position from the server; check if we need to rotate
     if (shouldRotateBoards) {
       position = (position[0] === '0' ? '1' : '0') + position.substring(1);
     }
