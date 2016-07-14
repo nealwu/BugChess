@@ -85,25 +85,25 @@ function displayBoards() {
   boards[1].timers[BLACK].displayOutOfTimeIfNeeded();
 
   // Check for checkmate
-  var testCheckmate = function() {
-    if (!checkmated && boards[0].engine.isCheckmate()) {
-      checkmated = true;
-      stopTimers();
-      socket.emit('game_over', getGameID());
-      $('#game-status0_' + boards[0].engine.getTurn()).text('Checkmate!');
-    }
+  if (boards[0].engine.isCheckmate()) {
+    stopTimers();
+    $('#game-status0_' + boards[0].engine.getTurn()).text('Checkmate!');
 
-    if (!checkmated && boards[1].engine.isCheckmate()) {
+    if (!checkmated) {
       checkmated = true;
-      stopTimers();
       socket.emit('game_over', getGameID());
-      $('#game-status1_' + boards[1].engine.getTurn()).text('Checkmate!');
     }
-  };
+  }
 
-  // Hack; raphael's image function doesn't have callback
-  window.setTimeout(testCheckmate);
-  window.setTimeout(testCheckmate, 500);
+  if (boards[1].engine.isCheckmate()) {
+    stopTimers();
+    $('#game-status1_' + boards[1].engine.getTurn()).text('Checkmate!');
+
+    if (!checkmated) {
+      checkmated = true;
+      socket.emit('game_over', getGameID());
+    }
+  }
 }
 
 function DisplayTimer(initial, id) {
