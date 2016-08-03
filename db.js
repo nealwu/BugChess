@@ -106,7 +106,7 @@ function loadGame(gameID, callback) {
       saveGame(gameID, engines, false);
     }
 
-    if (chats === null) {
+    if (!chats) {
       chats = [];
     }
 
